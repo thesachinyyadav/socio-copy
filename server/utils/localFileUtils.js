@@ -40,7 +40,7 @@ export const getPathFromStorageUrl = (url, bucketName) => {
   }
 };
 
-export async function uploadFileToSupabase(file, bucketName, eventIdForPath) {
+export async function uploadFileToLocal(file, bucketName, eventIdForPath) {
   if (!file) return null;
 
   await createDirectories();
