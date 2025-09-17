@@ -40,9 +40,15 @@ router.post("/", async (req, res) => {
         .json({ error: "Invalid user data: email is required" });
     }
 
-    // Check if user already exists
-    const checkStmt = db.prepare("SELECT * FROM users WHERE email = ?");
-    const existingUser = checkStmt.get(authClientUser.email);
+    const { data: existingUser, error: fetchError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", authClientUser.email)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      return res.status(500).json({ error: "Error checking user existence" });
+    }
 
     if (existingUser) {
       return res.status(200).json({
@@ -52,8 +58,8 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Create new user
-    let name = authClientUser.name || authClientUser.user_metadata?.full_name || "";
+    let name =
+      authClientUser.name || authClientUser.user_metadata?.full_name || "";
     let registerNumber = authClientUser.user_metadata?.register_number || "";
     if (name) {
       const nameParts = name.split(" ");
@@ -73,30 +79,30 @@ router.post("/", async (req, res) => {
       authClientUser.picture ||
       null;
 
-    const insertStmt = db.prepare(`
-      INSERT INTO users (email, name, avatar_url, is_organiser, course)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+    const newUserPayload = {
+      email: authClientUser.email,
+      name: name || "New User",
+      register_number: registerNumber || null,
+      avatar_url: avatarUrl,
+    };
 
-    const result = insertStmt.run(
-      authClientUser.email,
-      name || "New User",
-      avatarUrl,
-      0, // SQLite uses 0/1 for boolean
-      null
-    );
+    const { data: newUser, error: insertError } = await supabase
+      .from("users")
+      .insert(newUserPayload)
+      .select()
+      .single();
 
-    // Get the newly created user
-    const getStmt = db.prepare("SELECT * FROM users WHERE email = ?");
-    const newUser = getStmt.get(authClientUser.email);
-
+    if (insertError) {
+      return res
+        .status(500)
+        .json({ error: `Error creating user: ${insertError.message}` });
+    }
     return res.status(201).json({
       user: newUser,
       isNew: true,
       message: "User created successfully.",
     });
   } catch (error) {
-    console.error("Error creating user:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
