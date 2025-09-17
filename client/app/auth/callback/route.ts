@@ -15,8 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/?error=no_code`);
   }
 
-  const cookieStore = await cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  const supabase = createRouteHandlerClient({ cookies });
 
   try {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
@@ -59,7 +58,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Unexpected error in auth callback:", error);
     const supabaseClient = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies,
     });
     await supabaseClient.auth.signOut();
     return NextResponse.redirect(`${APP_URL}/?error=callback_exception`);

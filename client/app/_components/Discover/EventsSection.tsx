@@ -6,9 +6,9 @@ interface Event {
   fest: string;
   id: number;
   title: string;
-  date?: string;
+  date?: string | null;
   organizing_dept: string;
-  time?: string;
+  time?: string | null;
   location?: string;
   tags?: string[];
   image: string;

@@ -25,11 +25,7 @@ interface FormErrors {
   }>;
 }
 
-interface PageProps {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
-
-const Page = ({}: PageProps) => {
+const Page = () => {
   const routeParams = useParams();
   const router = useRouter();
   const { userData, isLoading: authIsLoading } = useAuth();
