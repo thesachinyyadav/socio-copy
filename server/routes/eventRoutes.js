@@ -1,952 +1,240 @@
 import express from "express";
-import supabase from "../config/supabaseClient.js";
+import db from "../config/database.js";
 import { multerUpload } from "../utils/multerConfig.js";
-import {
-  uploadFileToSupabase,
-  getPathFromStorageUrl,
-} from "../utils/fileUtils.js";
-import {
-  parseOptionalFloat,
-  parseOptionalInt,
-  parseJsonField,
-} from "../utils/parsers.js";
+import { uploadFileToSupabase, getPathFromStorageUrl, deleteFileFromLocal } from "../utils/fileUtils.js";
+import { parseOptionalFloat, parseOptionalInt, parseJsonField } from "../utils/parsers.js";
+import { v4 as uuidv4 } from "uuid";
 
 const router = express.Router();
 
+// GET all events
 router.get("/", async (req, res) => {
   try {
-    const { data: events, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const stmt = db.prepare("SELECT * FROM events ORDER BY created_at DESC");
+    const events = stmt.all();
 
-    if (error) {
-      console.error("Error fetching events:", error);
-      return res
-        .status(500)
-        .json({ error: "Error fetching events from database." });
-    }
-    return res.status(200).json({ events: events || [] });
+    // Parse JSON fields for each event
+    const processedEvents = events.map(event => ({
+      ...event,
+      department_access: event.department_access ? JSON.parse(event.department_access) : [],
+      rules: event.rules ? JSON.parse(event.rules) : [],
+      schedule: event.schedule ? JSON.parse(event.schedule) : [],
+      prizes: event.prizes ? JSON.parse(event.prizes) : []
+    }));
+
+    return res.status(200).json({ events: processedEvents });
   } catch (error) {
     console.error("Server error GET /api/events:", error);
-    return res
-      .status(500)
-      .json({ error: "Internal server error while fetching events." });
+    return res.status(500).json({ error: "Internal server error while fetching events." });
   }
 });
 
-router.post(
-  "/",
-  multerUpload.fields([
-    { name: "imageFile", maxCount: 1 },
-    { name: "bannerFile", maxCount: 1 },
-    { name: "pdfFile", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    const uploadedFilePaths = {
-      image: null,
-      banner: null,
-      pdf: null,
-    };
-    let generatedEventId = null;
-
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res
-          .status(401)
-          .json({ error: "Unauthorized: No token provided" });
-      }
-      const token = authHeader.split(" ")[1];
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await supabase.auth.getUser(token);
-
-      if (authError || !authUser) {
-        return res.status(401).json({ error: "Unauthorized: Invalid token" });
-      }
-
-      const { data: appUser, error: appUserError } = await supabase
-        .from("users")
-        .select("id, is_organiser, email")
-        .eq("email", authUser.email)
-        .single();
-
-      if (appUserError || !appUser || !appUser.id) {
-        console.error(
-          "App user fetch error for POST /api/events:",
-          appUserError
-        );
-        return res.status(403).json({
-          error:
-            "Forbidden: User not found or profile incomplete for event creation.",
-        });
-      }
-
-      if (!appUser.is_organiser) {
-        return res
-          .status(403)
-          .json({ error: "Forbidden: User is not an organizer" });
-      }
-
-      const files = req.files;
-      const eventData = req.body;
-
-      if (!eventData.eventTitle || String(eventData.eventTitle).trim() === "") {
-        return res
-          .status(400)
-          .json({ error: "Event title is required to generate an event ID." });
-      }
-      generatedEventId = String(eventData.eventTitle)
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-
-      if (!generatedEventId) {
-        return res.status(400).json({
-          error: "Valid event title required to generate a unique event ID.",
-        });
-      }
-
-      let event_image_url = null;
-      let banner_url = null;
-      let pdf_url = null;
-
-      if (files && files.imageFile && files.imageFile[0]) {
-        const result = await uploadFileToSupabase(
-          files.imageFile[0],
-          "event-images",
-          generatedEventId
-        );
-        event_image_url = result.publicUrl;
-        uploadedFilePaths.image = { path: result.path, bucket: "event-images" };
-      }
-      if (files && files.bannerFile && files.bannerFile[0]) {
-        const result = await uploadFileToSupabase(
-          files.bannerFile[0],
-          "event-banners",
-          generatedEventId
-        );
-        banner_url = result.publicUrl;
-        uploadedFilePaths.banner = {
-          path: result.path,
-          bucket: "event-banners",
-        };
-      }
-      if (files && files.pdfFile && files.pdfFile[0]) {
-        const result = await uploadFileToSupabase(
-          files.pdfFile[0],
-          "event-pdfs",
-          generatedEventId
-        );
-        pdf_url = result.publicUrl;
-        uploadedFilePaths.pdf = { path: result.path, bucket: "event-pdfs" };
-      }
-
-      let organizerPhoneForDb = null;
-      if (
-        eventData.contactPhone &&
-        String(eventData.contactPhone).trim() !== ""
-      ) {
-        const cleanedPhone = String(eventData.contactPhone).replace(/\D/g, "");
-        if (cleanedPhone.length > 0 && cleanedPhone.length < 20) {
-          organizerPhoneForDb = cleanedPhone;
-        } else if (cleanedPhone.length >= 20) {
-          for (const key in uploadedFilePaths) {
-            if (uploadedFilePaths[key]) {
-              await supabase.storage
-                .from(uploadedFilePaths[key].bucket)
-                .remove([uploadedFilePaths[key].path]);
-            }
-          }
-          return res
-            .status(400)
-            .json({ error: "Contact phone number is too long." });
-        }
-      }
-
-      const organizingDept = eventData.organizingDept;
-
-      const eventPayload = {
-        event_id: generatedEventId,
-        title: eventData.eventTitle,
-        description: eventData.detailedDescription,
-        event_date: eventData.eventDate || null,
-        end_date: eventData.endDate || null,
-        event_time: eventData.eventTime || null,
-        category: eventData.category,
-        organizing_dept: organizingDept,
-        department_access: parseJsonField(eventData.department, []),
-        fest:
-          eventData.festEvent === "none" ? null : eventData.festEvent || null,
-        registration_deadline: eventData.registrationDeadline || null,
-        venue: eventData.location,
-        registration_fee: parseOptionalFloat(eventData.registrationFee),
-        participants_per_team: parseOptionalInt(eventData.maxParticipants),
-        organizer_email: eventData.contactEmail,
-        organizer_phone: organizerPhoneForDb,
-        whatsapp_invite_link: eventData.whatsappLink || null,
-        claims_applicable: eventData.provideClaims === "true",
-        schedule: parseJsonField(eventData.scheduleItems, []),
-        rules: parseJsonField(eventData.rules, []),
-        prizes: parseJsonField(eventData.prizes, []),
-        event_image_url: event_image_url,
-        banner_url: banner_url,
-        pdf_url: pdf_url,
-        total_participants: 0,
-        created_by: appUser.email,
-      };
-
-      const requiredDbFields = [
-        "event_id",
-        "title",
-        "event_date",
-        "category",
-        "organizing_dept",
-        "department_access",
-        "registration_deadline",
-        "venue",
-        "organizer_email",
-      ];
-      for (const field of requiredDbFields) {
-        const value = eventPayload[field];
-        if (
-          value === null ||
-          value === undefined ||
-          (typeof value === "string" && !value.trim()) ||
-          (Array.isArray(value) && value.length === 0)
-        ) {
-          for (const key in uploadedFilePaths) {
-            if (uploadedFilePaths[key]) {
-              await supabase.storage
-                .from(uploadedFilePaths[key].bucket)
-                .remove([uploadedFilePaths[key].path]);
-            }
-          }
-          return res
-            .status(400)
-            .json({ error: `Missing required event field: ${field}.` });
-        }
-      }
-
-      if (
-        eventData.registrationFee &&
-        eventPayload.registration_fee === null &&
-        String(eventData.registrationFee).trim() !== "" &&
-        isNaN(parseFloat(eventData.registrationFee))
-      ) {
-        for (const key in uploadedFilePaths) {
-          if (uploadedFilePaths[key]) {
-            await supabase.storage
-              .from(uploadedFilePaths[key].bucket)
-              .remove([uploadedFilePaths[key].path]);
-          }
-        }
-        return res.status(400).json({
-          error: "Invalid registration fee format. Must be a number.",
-        });
-      }
-      if (
-        eventData.maxParticipants &&
-        eventPayload.participants_per_team === null &&
-        String(eventData.maxParticipants).trim() !== "" &&
-        isNaN(parseInt(eventData.maxParticipants, 10))
-      ) {
-        for (const key in uploadedFilePaths) {
-          if (uploadedFilePaths[key]) {
-            await supabase.storage
-              .from(uploadedFilePaths[key].bucket)
-              .remove([uploadedFilePaths[key].path]);
-          }
-        }
-        return res.status(400).json({
-          error: "Invalid max participants format. Must be a whole number.",
-        });
-      }
-      if (
-        eventData.contactPhone &&
-        String(eventData.contactPhone).trim() !== "" &&
-        eventPayload.organizer_phone === null
-      ) {
-        const cleanedPhone = String(eventData.contactPhone).replace(/\D/g, "");
-        if (
-          cleanedPhone.length === 0 &&
-          String(eventData.contactPhone).trim().length > 0
-        ) {
-          for (const key in uploadedFilePaths) {
-            if (uploadedFilePaths[key]) {
-              await supabase.storage
-                .from(uploadedFilePaths[key].bucket)
-                .remove([uploadedFilePaths[key].path]);
-            }
-          }
-          return res
-            .status(400)
-            .json({ error: "Invalid characters in contact phone number." });
-        }
-      }
-
-      const { data: newEvent, error: insertError } = await supabase
-        .from("events")
-        .insert(eventPayload)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Supabase event insert error:", insertError);
-        for (const key in uploadedFilePaths) {
-          if (uploadedFilePaths[key]) {
-            await supabase.storage
-              .from(uploadedFilePaths[key].bucket)
-              .remove([uploadedFilePaths[key].path]);
-          }
-        }
-
-        if (insertError.code === "23505") {
-          return res.status(409).json({
-            error: `Event creation failed: An event with a similar title (ID: ${generatedEventId}) might already exist. ${
-              insertError.details || ""
-            }`,
-          });
-        }
-        if (insertError.code === "22P02") {
-          return res.status(400).json({
-            error: `Invalid data format for one of the fields: ${
-              insertError.details || insertError.message
-            }`,
-          });
-        }
-        return res
-          .status(500)
-          .json({ error: `Error creating event: ${insertError.message}` });
-      }
-
-      return res
-        .status(201)
-        .json({ event: newEvent, message: "Event created successfully" });
-    } catch (error) {
-      if (generatedEventId) {
-        for (const key in uploadedFilePaths) {
-          if (uploadedFilePaths[key]) {
-            supabase.storage
-              .from(uploadedFilePaths[key].bucket)
-              .remove([uploadedFilePaths[key].path])
-              .catch((e) =>
-                console.error(
-                  `Rollback file deletion error for ${uploadedFilePaths[key].path}: ${e.message}`
-                )
-              );
-          }
-        }
-      }
-      return res
-        .status(500)
-        .json({ error: error.message || "Internal server error" });
-    }
-  }
-);
-
+// GET specific event by ID
 router.get("/:eventId", async (req, res) => {
   try {
     const { eventId } = req.params;
 
     if (!eventId || typeof eventId !== "string" || eventId.trim() === "") {
       return res.status(400).json({
-        error:
-          "Event ID must be provided in the URL path and be a non-empty string.",
+        error: "Event ID must be provided in the URL path and be a non-empty string.",
       });
     }
 
-    const { data: event, error } = await supabase
-      .from("events")
-      .select("*")
-      .eq("event_id", eventId)
-      .maybeSingle();
-
-    if (error) {
-      console.error(`Error fetching event by ID '${eventId}':`, error);
-      return res
-        .status(500)
-        .json({ error: "Error fetching event from database." });
-    }
+    const stmt = db.prepare("SELECT * FROM events WHERE event_id = ?");
+    const event = stmt.get(eventId);
 
     if (!event) {
-      return res
-        .status(404)
-        .json({ error: `Event with ID '${eventId}' not found.` });
+      return res.status(404).json({ error: `Event with ID '${eventId}' not found.` });
     }
 
-    return res.status(200).json({ event });
+    // Parse JSON fields
+    const processedEvent = {
+      ...event,
+      department_access: event.department_access ? JSON.parse(event.department_access) : [],
+      rules: event.rules ? JSON.parse(event.rules) : [],
+      schedule: event.schedule ? JSON.parse(event.schedule) : [],
+      prizes: event.prizes ? JSON.parse(event.prizes) : []
+    };
+
+    return res.status(200).json({ event: processedEvent });
   } catch (error) {
     console.error(`Server error GET /api/events/${req.params.eventId}:`, error);
-    return res
-      .status(500)
-      .json({ error: "Internal server error while fetching specific event." });
+    return res.status(500).json({ error: "Internal server error while fetching specific event." });
   }
 });
 
+// DELETE event
 router.delete("/:eventId", async (req, res) => {
   const { eventId } = req.params;
 
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Unauthorized: No token provided" });
-    }
-    const token = authHeader.split(" ")[1];
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser(token);
+    // Get event to find associated files
+    const getStmt = db.prepare("SELECT * FROM events WHERE event_id = ?");
+    const event = getStmt.get(eventId);
 
-    if (authError || !authUser) {
-      return res.status(401).json({ error: "Unauthorized: Invalid token" });
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
     }
 
-    const { data: appUser, error: appUserError } = await supabase
-      .from("users")
-      .select("id, email, is_organiser")
-      .eq("email", authUser.email)
-      .single();
+    // Delete associated files
+    const filesToDelete = [
+      { url: event.event_image_url, bucket: "event-images" },
+      { url: event.banner_url, bucket: "event-banners" },
+      { url: event.pdf_url, bucket: "event-pdfs" }
+    ];
 
-    if (appUserError || !appUser) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: User profile not found or incomplete." });
-    }
-
-    const { data: existingEvent, error: fetchError } = await supabase
-      .from("events")
-      .select("event_id, created_by, event_image_url, banner_url, pdf_url")
-      .eq("event_id", eventId)
-      .single();
-
-    if (fetchError || !existingEvent) {
-      if (fetchError?.code === "PGRST116" || !existingEvent) {
-        return res
-          .status(404)
-          .json({ error: `Event with ID '${eventId}' not found.` });
+    for (const fileInfo of filesToDelete) {
+      if (fileInfo.url) {
+        const filePath = getPathFromStorageUrl(fileInfo.url, fileInfo.bucket);
+        if (filePath) {
+          await deleteFileFromLocal(filePath, fileInfo.bucket);
+        }
       }
-      return res
-        .status(500)
-        .json({ error: "Failed to retrieve existing event data." });
     }
 
-    const isCreator = existingEvent.created_by === appUser.email;
-    const isAuthorizedOrganizer = appUser.is_organiser === true;
+    // Delete related registrations and attendance records
+    db.prepare("DELETE FROM attendance_status WHERE event_id = ?").run(eventId);
+    db.prepare("DELETE FROM registrations WHERE event_id = ?").run(eventId);
+    
+    // Delete the event
+    const deleteResult = db.prepare("DELETE FROM events WHERE event_id = ?").run(eventId);
 
-    if (!(isCreator && isAuthorizedOrganizer)) {
-      return res.status(403).json({
-        error: "Forbidden: You are not authorized to delete this event.",
-      });
+    if (deleteResult.changes === 0) {
+      return res.status(404).json({ error: "Event not found" });
     }
 
-    const filesToDelete = [];
-    if (existingEvent.event_image_url) {
-      const path = getPathFromStorageUrl(
-        existingEvent.event_image_url,
-        "event-images"
-      );
-      if (path) filesToDelete.push({ bucket: "event-images", path });
-    }
-    if (existingEvent.banner_url) {
-      const path = getPathFromStorageUrl(
-        existingEvent.banner_url,
-        "event-banners"
-      );
-      if (path) filesToDelete.push({ bucket: "event-banners", path });
-    }
-    if (existingEvent.pdf_url) {
-      const path = getPathFromStorageUrl(existingEvent.pdf_url, "event-pdfs");
-      if (path) filesToDelete.push({ bucket: "event-pdfs", path });
-    }
+    return res.status(200).json({ message: "Event deleted successfully" });
 
-    const { error: deleteDbError } = await supabase
-      .from("events")
-      .delete()
-      .eq("event_id", eventId);
-
-    if (deleteDbError) {
-      return res.status(500).json({
-        error: `Error deleting event from database: ${deleteDbError.message}`,
-      });
-    }
-
-    for (const file of filesToDelete) {
-      await supabase.storage
-        .from(file.bucket)
-        .remove([file.path])
-        .catch((e) =>
-          console.warn(
-            `Event record deleted, but failed to delete file ${file.path} from ${file.bucket}: ${e.message}`
-          )
-        );
-    }
-
-    const { error: deleteRegistrationsError } = await supabase
-      .from("event_registrations")
-      .delete()
-      .eq("event_id", eventId);
-
-    if (deleteRegistrationsError) {
-      console.warn(
-        `Event deleted, but failed to delete associated registrations for event ${eventId}: ${deleteRegistrationsError.message}`
-      );
-    }
-
-    return res.status(200).json({
-      message: "Event and associated registrations deleted successfully.",
-    });
   } catch (error) {
-    console.error(`Overall error DELETE /api/events/${eventId}:`, error);
-    return res.status(500).json({
-      error: error.message || "Internal server error while deleting event.",
-    });
+    console.error("Error deleting event:", error);
+    return res.status(500).json({ error: "Internal server error while deleting event." });
   }
 });
 
-router.post("/:eventIdSlug/close", async (req, res) => {
-  const { eventIdSlug } = req.params;
-
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Unauthorized: No token provided" });
-    }
-    const token = authHeader.split(" ")[1];
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser(token);
-
-    if (authError || !authUser) {
-      return res.status(401).json({ error: "Unauthorized: Invalid token" });
-    }
-
-    const { data: appUser, error: appUserError } = await supabase
-      .from("users")
-      .select("id, email, is_organiser")
-      .eq("email", authUser.email)
-      .single();
-
-    if (appUserError || !appUser) {
-      console.error(
-        "App user fetch error for POST /api/events/:eventIdSlug/close:",
-        appUserError
-      );
-      return res
-        .status(403)
-        .json({ error: "Forbidden: User profile not found or incomplete." });
-    }
-
-    if (!appUser.is_organiser) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: User is not an organizer." });
-    }
-
-    const { data: existingEvent, error: fetchError } = await supabase
-      .from("events")
-      .select("created_by, event_id")
-      .eq("event_id", eventIdSlug)
-      .single();
-
-    if (fetchError || !existingEvent) {
-      if (fetchError?.code === "PGRST116" || !existingEvent) {
-        return res
-          .status(404)
-          .json({ error: `Event with ID '${eventIdSlug}' not found.` });
-      }
-      console.error(
-        `Error fetching event '${eventIdSlug}' for closing registration:`,
-        fetchError
-      );
-      return res.status(500).json({
-        error: "Failed to retrieve event data for closing registration.",
-      });
-    }
-
-    if (existingEvent.created_by !== appUser.email) {
-      return res.status(403).json({
-        error:
-          "Forbidden: You are not authorized to close registration for this event.",
-      });
-    }
-
-    const newDeadline = new Date(Date.now() - 1000).toISOString();
-
-    const { data: updatedEvent, error: updateError } = await supabase
-      .from("events")
-      .update({
-        registration_deadline: newDeadline,
-        updated_at: new Date().toISOString(),
-        updated_by: appUser.email,
-      })
-      .eq("event_id", eventIdSlug)
-      .select("event_id, title, registration_deadline")
-      .single();
-
-    if (updateError) {
-      console.error(
-        `Failed to update registration deadline for event '${eventIdSlug}':`,
-        updateError
-      );
-      return res.status(500).json({ error: "Failed to close registration." });
-    }
-
-    return res.status(200).json({
-      message: "Registration closed successfully.",
-      event: updatedEvent,
-    });
-  } catch (error) {
-    console.error(
-      `Overall error POST /api/events/${eventIdSlug}/close:`,
-      error
-    );
-    return res.status(500).json({
-      error:
-        error.message || "Internal server error while closing registration.",
-    });
-  }
-});
-
-router.put(
-  "/:eventId",
-  multerUpload.fields([
-    { name: "imageFile", maxCount: 1 },
-    { name: "bannerFile", maxCount: 1 },
+// POST - Create new event (with file uploads)
+router.post("/", multerUpload.fields([
+    { name: "eventImage", maxCount: 1 },
+    { name: "bannerImage", maxCount: 1 },
     { name: "pdfFile", maxCount: 1 },
   ]),
   async (req, res) => {
-    const { eventId } = req.params;
-    const files = req.files || {};
-    const body = req.body;
-
-    const uploadedFileRegistry = {
-      image: null,
-      banner: null,
-      pdf: null,
-    };
-
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res
-          .status(401)
-          .json({ error: "Unauthorized: No token provided" });
-      }
-      const token = authHeader.split(" ")[1];
+      console.log("POST /api/events - Creating new event");
+      
+      const eventData = req.body;
+      const files = req.files;
 
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await supabase.auth.getUser(token);
-
-      if (authError || !authUser) {
-        return res.status(401).json({ error: "Unauthorized: Invalid token" });
-      }
-
-      const { data: appUser, error: appUserError } = await supabase
-        .from("users")
-        .select("id, email, is_organiser")
-        .eq("email", authUser.email)
-        .single();
-
-      if (appUserError || !appUser) {
-        console.error(
-          "App user fetch error for PUT /api/events:",
-          appUserError,
-          "Auth User Email:",
-          authUser.email
-        );
-        return res
-          .status(403)
-          .json({ error: "Forbidden: User profile not found or incomplete." });
-      }
-
-      if (!appUser.is_organiser) {
-        return res
-          .status(403)
-          .json({ error: "Forbidden: User is not an organizer." });
-      }
-
-      const { data: existingEvent, error: fetchError } = await supabase
-        .from("events")
-        .select(
-          "event_image_url, banner_url, pdf_url, created_by, event_id, title, event_date, end_date, event_time, description, category, organizing_dept, fest, registration_deadline, venue, organizer_email, registration_fee, participants_per_team, organizer_phone, whatsapp_invite_link, claims_applicable, department_access, schedule, rules, prizes"
-        )
-        .eq("event_id", eventId)
-        .single();
-
-      if (fetchError || !existingEvent) {
-        if (fetchError?.code === "PGRST116" || !existingEvent) {
-          return res
-            .status(404)
-            .json({ error: `Event with ID '${eventId}' not found.` });
-        }
-        console.error("Error fetching existing event for update:", fetchError);
-        return res
-          .status(500)
-          .json({ error: "Failed to retrieve existing event data." });
-      }
-
-      if (existingEvent.created_by !== appUser.email) {
-        return res.status(403).json({
-          error: "Forbidden: You are not authorized to update this event.",
-        });
-      }
-
-      const updatePayload = {};
-
-      const fileFieldsToProcess = [
-        {
-          formKey: "imageFile",
-          dbKey: "event_image_url",
-          bucket: "event-images",
-          registryKey: "image",
-        },
-        {
-          formKey: "bannerFile",
-          dbKey: "banner_url",
-          bucket: "event-banners",
-          registryKey: "banner",
-        },
-        {
-          formKey: "pdfFile",
-          dbKey: "pdf_url",
-          bucket: "event-pdfs",
-          registryKey: "pdf",
-        },
-      ];
-
-      for (const field of fileFieldsToProcess) {
-        const newFile = files[field.formKey]?.[0];
-        const formSpecifiedUrl =
-          body[
-            `existing${
-              field.formKey.charAt(0).toUpperCase() + field.formKey.slice(1)
-            }Url`
-          ] || null;
-        const currentDbUrl = existingEvent[field.dbKey];
-        let finalUrl = currentDbUrl;
-
-        if (newFile) {
-          const { publicUrl, path: newPath } = await uploadFileToSupabase(
-            newFile,
-            field.bucket,
-            existingEvent.event_id
-          );
-          finalUrl = publicUrl;
-          uploadedFileRegistry[field.registryKey] = {
-            path: newPath,
-            bucket: field.bucket,
-          };
-
-          if (currentDbUrl && currentDbUrl !== publicUrl) {
-            const oldPath = getPathFromStorageUrl(currentDbUrl, field.bucket);
-            if (oldPath)
-              await supabase.storage
-                .from(field.bucket)
-                .remove([oldPath])
-                .catch((e) =>
-                  console.warn(
-                    `Non-critical: Failed to delete old file ${oldPath} from ${field.bucket}: ${e.message}`
-                  )
-                );
-          }
-        } else {
-          if (formSpecifiedUrl === null && currentDbUrl) {
-            finalUrl = null;
-            const oldPath = getPathFromStorageUrl(currentDbUrl, field.bucket);
-            if (oldPath)
-              await supabase.storage
-                .from(field.bucket)
-                .remove([oldPath])
-                .catch((e) =>
-                  console.warn(
-                    `Non-critical: Failed to delete file ${oldPath} from ${field.bucket} on clear: ${e.message}`
-                  )
-                );
-          } else if (formSpecifiedUrl !== currentDbUrl) {
-            finalUrl = formSpecifiedUrl;
-          }
-        }
-        if (finalUrl !== currentDbUrl) {
-          updatePayload[field.dbKey] = finalUrl;
+      // Simple validation - just check for required fields
+      const requiredFields = ["title", "eventDate", "category", "organizingDept", "venue"];
+      for (const field of requiredFields) {
+        if (!eventData[field]) {
+          return res.status(400).json({ error: `Missing required field: ${field}` });
         }
       }
 
-      if (
-        body.eventTitle !== undefined &&
-        body.eventTitle !== existingEvent.title
-      )
-        updatePayload.title = body.eventTitle;
-      const eventDate = body.eventDate || null;
-      if (eventDate !== existingEvent.event_date)
-        updatePayload.event_date = eventDate;
+      // Generate unique event ID
+      const event_id = uuidv4().replace(/-/g, '');
 
-      const endDate = body.endDate || null;
-      if (endDate !== existingEvent.end_date) updatePayload.end_date = endDate;
+      // Upload files if they exist
+      let event_image_url = null;
+      let banner_url = null;
+      let pdf_url = null;
 
-      const eventTime = body.eventTime ? `${body.eventTime}:00` : null;
-      if (eventTime !== existingEvent.event_time)
-        updatePayload.event_time = eventTime;
-
-      if (
-        body.detailedDescription !== undefined &&
-        body.detailedDescription !== existingEvent.description
-      )
-        updatePayload.description = body.detailedDescription;
-      if (
-        body.category !== undefined &&
-        body.category !== existingEvent.category
-      )
-        updatePayload.category = body.category;
-
-      const organizingDept = body.organizingDept || null;
-      if (organizingDept !== existingEvent.organizing_dept)
-        updatePayload.organizing_dept = organizingDept;
-
-      const festEvent =
-        body.festEvent === "none" ? null : body.festEvent || null;
-      if (festEvent !== existingEvent.fest) updatePayload.fest = festEvent;
-
-      const registrationDeadline = body.registrationDeadline || null;
-      if (registrationDeadline !== existingEvent.registration_deadline)
-        updatePayload.registration_deadline = registrationDeadline;
-
-      if (body.location !== undefined && body.location !== existingEvent.venue)
-        updatePayload.venue = body.location;
-      if (
-        body.contactEmail !== undefined &&
-        body.contactEmail !== existingEvent.organizer_email
-      )
-        updatePayload.organizer_email = body.contactEmail;
-
-      const registrationFee = parseOptionalFloat(body.registrationFee);
-      if (registrationFee !== existingEvent.registration_fee)
-        updatePayload.registration_fee = registrationFee;
-
-      const maxParticipants = parseOptionalInt(body.maxParticipants);
-      if (
-        maxParticipants != 0 &&
-        maxParticipants !== existingEvent.participants_per_team
-      )
-        updatePayload.participants_per_team = maxParticipants;
-
-      const contactPhone = body.contactPhone
-        ? String(body.contactPhone).replace(/\D/g, "")
-        : null;
-      if (contactPhone !== existingEvent.organizer_phone)
-        updatePayload.organizer_phone = contactPhone || null;
-
-      const whatsappLink = body.whatsappLink || null;
-      if (whatsappLink !== existingEvent.whatsapp_invite_link)
-        updatePayload.whatsapp_invite_link = whatsappLink;
-
-      const provideClaims = body.provideClaims === "true";
-      if (provideClaims !== existingEvent.claims_applicable)
-        updatePayload.claims_applicable = provideClaims;
-
-      const departmentAccess = parseJsonField(body.department, null);
-      if (
-        JSON.stringify(departmentAccess) !==
-        JSON.stringify(existingEvent.department_access)
-      )
-        updatePayload.department_access = departmentAccess;
-
-      const scheduleItems = parseJsonField(body.scheduleItems, null);
-      if (
-        JSON.stringify(scheduleItems) !== JSON.stringify(existingEvent.schedule)
-      )
-        updatePayload.schedule = scheduleItems;
-
-      const rules = parseJsonField(body.rules, null);
-      if (JSON.stringify(rules) !== JSON.stringify(existingEvent.rules))
-        updatePayload.rules = rules;
-
-      const prizes = parseJsonField(body.prizes, null);
-      if (JSON.stringify(prizes) !== JSON.stringify(existingEvent.prizes))
-        updatePayload.prizes = prizes;
-
-      if (
-        body.eventTitle !== undefined &&
-        typeof body.eventTitle === "string" &&
-        body.eventTitle.trim() !== "" &&
-        existingEvent.event_id !==
-          body.eventTitle
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, "")
-      ) {
-        updatePayload.event_id = body.eventTitle
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, "");
-      }
-
-      if (Object.keys(updatePayload).length === 0) {
-        return res.status(200).json({
-          message: "No changes detected to update.",
-          event: existingEvent,
-        });
-      }
-
-      updatePayload.updated_at = new Date().toISOString();
-      updatePayload.updated_by = appUser.email;
-
-      const { data: updatedEvent, error: updateError } = await supabase
-        .from("events")
-        .update(updatePayload)
-        .eq("event_id", eventId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error("Error updating event in Supabase:", updateError);
-        for (const key of Object.keys(uploadedFileRegistry)) {
-          if (uploadedFileRegistry[key]) {
-            await supabase.storage
-              .from(uploadedFileRegistry[key].bucket)
-              .remove([uploadedFileRegistry[key].path])
-              .catch((e) =>
-                console.error(
-                  `Rollback failed for ${uploadedFileRegistry[key].path}: ${e.message}`
-                )
-              );
-          }
+      try {
+        if (files.eventImage && files.eventImage[0]) {
+          const result = await uploadFileToSupabase(files.eventImage[0], "event-images", event_id);
+          event_image_url = result.publicUrl;
         }
-        if (updateError.code === "23505" && updatePayload.event_id) {
-          return res.status(409).json({
-            error: `Failed to update event: The new event ID (slug) '${updatePayload.event_id}' likely conflicts with an existing event. ${updateError.message}`,
-          });
+
+        if (files.bannerImage && files.bannerImage[0]) {
+          const result = await uploadFileToSupabase(files.bannerImage[0], "event-banners", event_id);
+          banner_url = result.publicUrl;
         }
-        return res
-          .status(500)
-          .json({ error: `Failed to update event: ${updateError.message}` });
+
+        if (files.pdfFile && files.pdfFile[0]) {
+          const result = await uploadFileToSupabase(files.pdfFile[0], "event-pdfs", event_id);
+          pdf_url = result.publicUrl;
+        }
+      } catch (fileError) {
+        console.error("File upload error:", fileError);
+        return res.status(500).json({ error: "Failed to upload files" });
       }
 
-      return res
-        .status(200)
-        .json({ message: "Event updated successfully!", event: updatedEvent });
-    } catch (error) {
-      console.error("Overall error in PUT /api/events/:eventId :", error);
-      for (const key of Object.keys(uploadedFileRegistry)) {
-        if (uploadedFileRegistry[key]) {
-          await supabase.storage
-            .from(uploadedFileRegistry[key].bucket)
-            .remove([uploadedFileRegistry[key].path])
-            .catch((e) =>
-              console.error(
-                `Error during rollback of ${uploadedFileRegistry[key].path}: ${e.message}`
-              )
-            );
-        }
-      }
-      return res.status(500).json({
-        error: error.message || "An unexpected server error occurred.",
+      // Prepare event payload
+      const eventPayload = {
+        event_id: event_id,
+        title: eventData.title,
+        description: eventData.description || "",
+        event_date: eventData.eventDate,
+        event_time: eventData.eventTime || null,
+        end_date: eventData.endDate || null,
+        venue: eventData.venue,
+        category: eventData.category,
+        department_access: JSON.stringify(parseJsonField(eventData.departmentAccess, [])),
+        claims_applicable: eventData.claimsApplicable === "true" ? 1 : 0,
+        registration_fee: parseOptionalFloat(eventData.registrationFee, 0),
+        participants_per_team: parseOptionalInt(eventData.participantsPerTeam, 1),
+        organizer_email: eventData.organizerEmail || "",
+        organizer_phone: eventData.organizerPhone || "",
+        whatsapp_invite_link: eventData.whatsappInviteLink || "",
+        organizing_dept: eventData.organizingDept,
+        fest: eventData.fest || null,
+        registration_deadline: eventData.registrationDeadline || null,
+        schedule: JSON.stringify(parseJsonField(eventData.scheduleItems, [])),
+        rules: JSON.stringify(parseJsonField(eventData.rules, [])),
+        prizes: JSON.stringify(parseJsonField(eventData.prizes, [])),
+        event_image_url: event_image_url,
+        banner_url: banner_url,
+        pdf_url: pdf_url,
+        total_participants: 0,
+        created_by: eventData.createdBy || "admin"
+      };
+
+      // Insert event into database
+      const insertStmt = db.prepare(`
+        INSERT INTO events (
+          event_id, title, description, event_date, event_time, end_date, venue, 
+          category, department_access, claims_applicable, registration_fee, 
+          participants_per_team, organizer_email, organizer_phone, whatsapp_invite_link,
+          organizing_dept, fest, registration_deadline, schedule, rules, prizes,
+          event_image_url, banner_url, pdf_url, total_participants, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const result = insertStmt.run(
+        eventPayload.event_id, eventPayload.title, eventPayload.description,
+        eventPayload.event_date, eventPayload.event_time, eventPayload.end_date,
+        eventPayload.venue, eventPayload.category, eventPayload.department_access,
+        eventPayload.claims_applicable, eventPayload.registration_fee,
+        eventPayload.participants_per_team, eventPayload.organizer_email,
+        eventPayload.organizer_phone, eventPayload.whatsapp_invite_link,
+        eventPayload.organizing_dept, eventPayload.fest, eventPayload.registration_deadline,
+        eventPayload.schedule, eventPayload.rules, eventPayload.prizes,
+        eventPayload.event_image_url, eventPayload.banner_url, eventPayload.pdf_url,
+        eventPayload.total_participants, eventPayload.created_by
+      );
+
+      // Get the created event
+      const getStmt = db.prepare("SELECT * FROM events WHERE event_id = ?");
+      const createdEvent = getStmt.get(event_id);
+
+      // Parse JSON fields for response
+      const responseEvent = {
+        ...createdEvent,
+        department_access: createdEvent.department_access ? JSON.parse(createdEvent.department_access) : [],
+        rules: createdEvent.rules ? JSON.parse(createdEvent.rules) : [],
+        schedule: createdEvent.schedule ? JSON.parse(createdEvent.schedule) : [],
+        prizes: createdEvent.prizes ? JSON.parse(createdEvent.prizes) : []
+      };
+
+      return res.status(201).json({
+        message: "Event created successfully",
+        event: responseEvent
       });
+
+    } catch (error) {
+      console.error("Error creating event:", error);
+      return res.status(500).json({ error: "Internal server error while creating event." });
     }
   }
 );

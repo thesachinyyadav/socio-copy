@@ -40,15 +40,32 @@ A comprehensive platform for managing university fests and events, similar to "B
 
 ### Backend
 - **Node.js + Express**: RESTful API server
-- **Supabase**: Database and authentication
-- **File Upload**: Support for images, banners, and PDFs
+- **SQLite**: Local database with better-sqlite3
+- **File Upload**: Local file storage for images, banners, and PDFs
 
-## Setup Instructions
+## Quick Setup
+
+### Option 1: Automated Setup (Recommended)
+```bash
+# Clone the repository
+git clone <repository-url>
+cd socio-copy
+
+# Run the automated setup script
+./setup.sh
+
+# Start the server (in one terminal)
+cd server && npm run dev
+
+# Start the client (in another terminal) 
+cd client && npm run dev
+```
+
+### Option 2: Manual Setup
 
 ### Prerequisites
 - Node.js (v18 or higher)
 - npm or yarn
-- Supabase account
 
 ### Server Setup
 1. Navigate to the server directory:
@@ -61,23 +78,15 @@ A comprehensive platform for managing university fests and events, similar to "B
    npm install
    ```
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Edit `.env` with your Supabase credentials:
-   ```
-   SUPABASE_URL=your_supabase_project_url
-   SUPABASE_SERVICE_KEY=your_supabase_service_key
-   PORT=8000
-   NODE_ENV=development
-   ```
-
-5. Start the server:
+3. Start the development server:
    ```bash
    npm run dev
    ```
+   
+   The server will:
+   - Run on `http://localhost:8000`
+   - Automatically create the SQLite database
+   - Set up upload directories
 
 ### Client Setup
 1. Navigate to the client directory:
@@ -90,16 +99,58 @@ A comprehensive platform for managing university fests and events, similar to "B
    npm install
    ```
 
-3. Set up environment variables for client:
-   ```bash
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-4. Start the development server:
+3. Start the development server:
    ```bash
    npm run dev
    ```
+   
+   The client will run on `http://localhost:3000`
+
+## API Endpoints
+
+The server provides RESTful APIs for:
+
+- **Users**: `/api/users`
+- **Events**: `/api/events` 
+- **Fests**: `/api/fests`
+- **Registrations**: `/api/register`, `/api/registrations`
+- **Attendance**: `/api/events/:eventId/participants`, `/api/events/:eventId/attendance`
+- **Notifications**: `/api/notifications`
+
+## Database Structure
+
+The application uses SQLite with the following tables:
+- **users**: User profiles and authentication
+- **events**: Event details and metadata
+- **fests**: Festival/competition information
+- **registrations**: Event registrations (individual/team)
+- **attendance_status**: Attendance tracking
+- **notifications**: User notifications
+
+## File Storage
+
+Files are stored locally in the `server/uploads/` directory:
+- `event-images/`: Event poster images
+- `event-banners/`: Event banner images  
+- `event-pdfs/`: Event documents and rules
+- `fest-images/`: Festival poster images
+
+## Development Commands
+
+### Server
+```bash
+cd server
+npm run dev    # Start development server with nodemon
+npm start      # Start production server
+```
+
+### Client
+```bash
+cd client  
+npm run dev    # Start Next.js development server
+npm run build  # Build for production
+npm start      # Start production build
+```
 
 ## Key Features
 

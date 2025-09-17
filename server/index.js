@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url';
 import db, { initializeDatabase } from "./config/database.js";
 
 import userRoutes from "./routes/userRoutes.js";
-// import eventRoutes from "./routes/eventRoutes.js";    // Temporarily disabled during migration
-// import festRoutes from "./routes/festRoutes.js";      // Temporarily disabled during migration
+import eventRoutes from "./routes/eventRoutes.js";
+import festRoutes from "./routes/festRoutes.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
@@ -28,8 +28,8 @@ app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use("/api/users", userRoutes);
-// app.use("/api/events", eventRoutes);  // Temporarily disabled during migration
-// app.use("/api/fests", festRoutes);    // Temporarily disabled during migration
+app.use("/api/events", eventRoutes);
+app.use("/api/fests", festRoutes);
 app.use("/api", registrationRoutes);
 app.use("/api", attendanceRoutes);
 app.use("/api", notificationRoutes);
