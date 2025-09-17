@@ -314,7 +314,16 @@ const DiscoverPage = () => {
           {!isLoadingFests && !errorFests && (
             <FestsSection
               title="Upcoming fests"
-              fests={upcomingFests || []}
+              fests={upcomingFests.map(fest => ({
+                fest_id: parseInt(fest.fest_id) || fest.id,
+                fest_title: fest.title,
+                organizing_dept: fest.organizing_dept,
+                description: fest.description,
+                dateRange: `${fest.opening_date} - ${fest.closing_date}`,
+                fest_image_url: fest.fest_image_url,
+                opening_date: new Date(fest.opening_date),
+                closing_date: new Date(fest.closing_date)
+              }))}
               showAll={true}
               baseUrl="fest"
             />

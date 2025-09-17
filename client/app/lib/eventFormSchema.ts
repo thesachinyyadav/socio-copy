@@ -108,6 +108,7 @@ export const eventFormSchema = z
       .regex(/^\d{10}$/, "Phone number must be 10 digits"),
     whatsappLink: z.string().url("Invalid URL").optional().or(z.literal("")),
     provideClaims: z.boolean().default(false),
+    sendNotifications: z.boolean().default(false),
 
     imageFile: fileSchema(
       MAX_FILE_SIZE_IMAGE,
@@ -141,6 +142,7 @@ export const eventFormSchema = z
       .optional(),
 
     scheduleItems: z.array(scheduleItemSchema).optional(),
+    eventHeads: z.array(z.string().email("Invalid email format")).optional(),
   })
   .refine(
     (data) => {
@@ -261,19 +263,8 @@ export const categories = [
   { value: "innovation", label: "Innovation" },
 ];
 
-let res;
-try {
-  const response = await fetch("http://localhost:8000/api/fests");
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-  res = await response.json();
-} catch (error) {
-  console.error("There was a problem with the fetch operation:", error);
-}
-
-export const festEvents =
-  res?.fests?.map((fest: any) => ({
-    value: fest.fest_title,
-    label: fest.fest_title,
-  })) || [];
+// Note: Fest events would be loaded dynamically via API call in components
+export const festEvents = [
+  { value: "", label: "Select a fest (optional)" },
+  // This will be populated dynamically in the component
+];

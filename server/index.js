@@ -9,6 +9,8 @@ import userRoutes from "./routes/userRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import festRoutes from "./routes/festRoutes.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config();
 
@@ -20,6 +22,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/fests", festRoutes);
 app.use("/api", registrationRoutes);
+app.use("/api", attendanceRoutes);
+app.use("/api", notificationRoutes);
 
 const deleteFilesFromSupabase = async (supabaseInstance, files) => {
   const filesByBucket = files.reduce((acc, file) => {

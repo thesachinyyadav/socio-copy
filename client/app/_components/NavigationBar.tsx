@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/app/logo.svg";
 import { useAuth } from "@/context/AuthContext";
+import { NotificationSystem } from "./NotificationSystem";
 
 export default function NavigationBar() {
   const { session, userData, isLoading, signInWithGoogle, signOut } = useAuth();
@@ -45,6 +46,7 @@ export default function NavigationBar() {
           {session && userData ? (
             userData.is_organiser ? (
               <div className="flex gap-4 items-center">
+                <NotificationSystem />
                 <Link href="/manage">
                   <button className="cursor-pointer font-semibold px-4 py-2 border-2 rounded-full text-sm hover:bg-[#f3f3f3] transition-all duration-200 ease-in-out">
                     Manage events
@@ -83,7 +85,9 @@ export default function NavigationBar() {
                 )}
               </div>
             ) : (
-              <Link href="/profile">
+              <div className="flex gap-4 items-center">
+                <NotificationSystem />
+                <Link href="/profile">
                 <div className="flex items-center gap-4">
                   <span className="font-medium">
                     {userData?.name || "User"}
@@ -107,6 +111,7 @@ export default function NavigationBar() {
                   </div>
                 </div>
               </Link>
+              </div>
             )
           ) : (
             <>

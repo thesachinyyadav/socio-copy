@@ -190,7 +190,7 @@ export const EventCard = ({
           </div>
         </div>
         {!authLoading && userData?.is_organiser ? (
-          <div className="mt-auto pt-2 border-t border-gray-200">
+          <div className="mt-auto pt-2 border-t border-gray-200 space-y-2">
             <Link
               href={participantsPageUrl}
               className="inline-flex items-center gap-1 text-sm text-[#154CB3] font-semibold hover:underline"
@@ -213,6 +213,28 @@ export const EventCard = ({
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
               View Participants
+            </Link>
+            <Link
+              href={`/attendance?eventId=${eventSlug}&eventTitle=${encodeURIComponent(title)}`}
+              className="inline-flex items-center gap-1 text-sm text-green-600 font-semibold hover:underline"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-clipboard-check"
+              >
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <path d="m9 14 2 2 4-4"/>
+              </svg>
+              Mark Attendance
             </Link>
           </div>
         ) : (

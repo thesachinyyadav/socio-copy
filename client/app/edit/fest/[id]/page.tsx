@@ -1,5 +1,5 @@
 "use client";
-import CreateFest from "@/app/create/fest/page"; // Assuming this is the correct path to your CreateFest component
+import CreateFestForm from "../../../_components/CreateFestForm";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "../../../../context/AuthContext"; // Adjust path
@@ -120,7 +120,7 @@ const EditPage = () => {
   }
 
   return (
-    <CreateFest
+    <CreateFestForm
       title={festData?.title}
       openingDate={festData?.openingDate}
       closingDate={festData?.closingDate}

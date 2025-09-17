@@ -129,7 +129,7 @@ const CustomTimePicker: React.FC<CustomTimePickerProps> = ({
     currentDisplayValue: number,
     onSelectValue: (value: number) => void,
     type: "hour" | "minute",
-    listRef: React.RefObject<HTMLDivElement>
+    listRef: React.RefObject<HTMLDivElement | null>
   ) => (
     <div
       ref={listRef}
