@@ -5,7 +5,7 @@ This guide will help you deploy the Socio-Copy university fest platform to produ
 ## Prerequisites
 
 - Supabase project set up with proper database schema
-- Node.js hosting service (Vercel, Netlify, Railway, etc.)
+- Node.js hosting service
 - Domain name (optional)
 
 ## Database Setup
@@ -152,41 +152,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_public_key
 
 ## Deployment Options
 
-### Option 1: Vercel (Recommended for Next.js)
+### General Deployment Setup
 
-1. **Deploy Client:**
+1. **Prepare for Deployment:**
    ```bash
    cd client
    npm run build
    ```
    
-2. **Connect to Vercel:**
-   - Push code to GitHub
-   - Connect repository to Vercel
-   - Set environment variables in Vercel dashboard
-   - Deploy
+2. **Deploy to Your Hosting Platform:**
+   - Connect your GitHub repository to your chosen hosting platform
+   - Set the required environment variables
+   - Configure build settings as needed
+   - Deploy both client and server components
 
-3. **Deploy Server:**
-   - Use Vercel serverless functions or deploy separately
-   - Or use Railway/Render for the Express server
-
-### Option 2: Railway (Full-Stack)
-
-1. **Connect Repository:**
-   - Connect your GitHub repo to Railway
-   
-2. **Set up Services:**
-   - Create service for client (Next.js)
-   - Create service for server (Node.js/Express)
-   
-3. **Configure Build Commands:**
-   - Client: `cd client && npm install && npm run build`
-   - Server: `cd server && npm install`
-   
-4. **Set Environment Variables:**
-   - Add all required environment variables in Railway dashboard
-
-### Option 3: Custom Server
+### Custom Server Setup
 
 1. **Prepare Server:**
    ```bash
@@ -254,9 +234,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_public_key
 ## Monitoring and Maintenance
 
 ### 1. Set up Monitoring
-- Use Vercel Analytics or similar
+- Use analytics tools appropriate for your hosting platform
 - Monitor API response times
-- Set up error tracking (Sentry, LogRocket)
+- Set up error tracking tools (Sentry, LogRocket, etc.)
 
 ### 2. Database Maintenance
 - Regular backups of Supabase data
