@@ -100,54 +100,58 @@ export default function NavigationBar() {
 
   return (
     <>
-      <nav className="w-full flex justify-between items-center pt-8 pb-7 px-6 md:px-12 text-[#154CB3] select-none relative">
+      <nav className="w-full flex items-center pt-8 pb-7 px-6 md:px-12 text-[#154CB3] select-none relative">
         {/* Logo */}
-        <Link href={session ? "/discover" : "/"}>
-          <Image
-            src={Logo}
-            alt="Logo"
-            width={100}
-            height={100}
-            className="cursor-pointer z-20 relative"
-          />
-        </Link>
+        <div className="flex-shrink-0">
+          <Link href={session ? "/discover" : "/"}>
+            <Image
+              src={Logo}
+              alt="Logo"
+              width={100}
+              height={100}
+              className="cursor-pointer z-20 relative"
+            />
+          </Link>
+        </div>
 
         {/* Desktop Navigation Links - Centered */}
-        <div className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 space-x-8">
-          {navigationLinks.map((link) => (
-            <div
-              key={link.name}
-              className="relative group"
-              onMouseEnter={() => handleDropdownHover(link.name)}
-              onMouseLeave={() => handleDropdownHover(null)}
-            >
-              <Link
-                href={link.href}
-                className="font-medium hover:text-[#154cb3df] transition-colors duration-200 py-2 px-1"
+        <div className="hidden lg:flex flex-1 justify-center mx-8">
+          <div className="flex space-x-8">
+            {navigationLinks.map((link) => (
+              <div
+                key={link.name}
+                className="relative group"
+                onMouseEnter={() => handleDropdownHover(link.name)}
+                onMouseLeave={() => handleDropdownHover(null)}
               >
-                {link.name}
-              </Link>
-              
-              {/* Dropdown Menu */}
-              {activeDropdown === link.name && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
-                  {link.dropdown.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#154CB3] transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                <Link
+                  href={link.href}
+                  className="font-medium hover:text-[#154cb3df] transition-colors duration-200 py-2 px-1 whitespace-nowrap"
+                >
+                  {link.name}
+                </Link>
+                
+                {/* Dropdown Menu */}
+                {activeDropdown === link.name && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
+                    {link.dropdown.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#154CB3] transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Right side - Search Bar and Auth Buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Search Bar */}
           <form onSubmit={handleSearchSubmit} className="hidden md:flex">
             <div className="relative">
@@ -156,7 +160,7 @@ export default function NavigationBar() {
                 placeholder="Search events..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-[#154CB3] focus:ring-1 focus:ring-[#154CB3] transition-all duration-200"
+                className="w-48 xl:w-64 px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-[#154CB3] focus:ring-1 focus:ring-[#154CB3] transition-all duration-200"
               />
               <button
                 type="submit"
@@ -185,7 +189,7 @@ export default function NavigationBar() {
           </button>
 
           {/* Auth Buttons */}
-          <div className="hidden lg:flex gap-2 items-center">
+          <div className="hidden lg:flex gap-3 items-center">
             {session && userData ? (
               userData.is_organiser ? (
                 <div className="flex gap-4 items-center">
