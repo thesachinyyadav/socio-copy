@@ -99,6 +99,8 @@ export function initializeDatabase() {
       team_leader_email TEXT,
       team_leader_register_number TEXT,
       teammates TEXT, -- JSON string
+      qr_code_data TEXT, -- QR code payload for attendance scanning
+      qr_code_generated_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (event_id) REFERENCES events(event_id)
     )
@@ -133,6 +135,21 @@ export function initializeDatabase() {
       is_read BOOLEAN DEFAULT 0,
       read_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // QR scan logs table for audit trail
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS qr_scan_logs (
+      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+      registration_id TEXT,
+      event_id TEXT,
+      scanned_by TEXT,
+      scan_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      scan_result TEXT CHECK (scan_result IN ('success', 'invalid', 'duplicate', 'expired')),
+      scanner_info TEXT, -- JSON string with device/browser info
+      FOREIGN KEY (registration_id) REFERENCES registrations(id),
+      FOREIGN KEY (event_id) REFERENCES events(event_id)
     )
   `);
 

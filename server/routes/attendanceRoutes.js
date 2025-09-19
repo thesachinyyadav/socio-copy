@@ -1,5 +1,6 @@
 import express from "express";
 import db from "../config/database.js";
+import { verifyQRCodeData, parseQRCodeData } from "../utils/qrCodeUtils.js";
 
 const router = express.Router();
 
@@ -129,6 +130,140 @@ router.post("/events/:eventId/attendance", async (req, res) => {
 
   } catch (error) {
     console.error("Error marking attendance:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// QR Code scan for attendance
+router.post("/events/:eventId/scan-qr", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { qrCodeData, scannedBy, scannerInfo } = req.body;
+
+    if (!qrCodeData) {
+      return res.status(400).json({ error: "QR code data is required" });
+    }
+
+    // Parse QR code data
+    const qrData = parseQRCodeData(qrCodeData);
+    if (!qrData) {
+      // Log invalid scan attempt
+      const logStmt = db.prepare(`
+        INSERT INTO qr_scan_logs (event_id, scanned_by, scan_result, scanner_info)
+        VALUES (?, ?, ?, ?)
+      `);
+      logStmt.run(eventId, scannedBy || 'unknown', 'invalid', JSON.stringify(scannerInfo || {}));
+      
+      return res.status(400).json({ error: "Invalid QR code format" });
+    }
+
+    // Verify QR code data integrity
+    const verification = verifyQRCodeData(qrData);
+    if (!verification.valid) {
+      // Log invalid scan attempt
+      const logStmt = db.prepare(`
+        INSERT INTO qr_scan_logs (registration_id, event_id, scanned_by, scan_result, scanner_info)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      logStmt.run(qrData.registrationId || null, eventId, scannedBy || 'unknown', 'invalid', JSON.stringify(scannerInfo || {}));
+      
+      return res.status(400).json({ error: verification.message });
+    }
+
+    // Check if QR code is for the correct event
+    if (qrData.eventId !== eventId) {
+      // Log invalid scan attempt
+      const logStmt = db.prepare(`
+        INSERT INTO qr_scan_logs (registration_id, event_id, scanned_by, scan_result, scanner_info)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      logStmt.run(qrData.registrationId, eventId, scannedBy || 'unknown', 'invalid', JSON.stringify(scannerInfo || {}));
+      
+      return res.status(400).json({ error: "QR code is not valid for this event" });
+    }
+
+    // Find the registration
+    const registrationStmt = db.prepare(`
+      SELECT r.*, 
+             COALESCE(a.status, 'absent') as attendance_status
+      FROM registrations r
+      LEFT JOIN attendance_status a ON r.id = a.registration_id
+      WHERE r.registration_id = ?
+    `);
+    const registration = registrationStmt.get(qrData.registrationId);
+
+    if (!registration) {
+      // Log invalid scan attempt
+      const logStmt = db.prepare(`
+        INSERT INTO qr_scan_logs (registration_id, event_id, scanned_by, scan_result, scanner_info)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      logStmt.run(qrData.registrationId, eventId, scannedBy || 'unknown', 'invalid', JSON.stringify(scannerInfo || {}));
+      
+      return res.status(404).json({ error: "Registration not found" });
+    }
+
+    // Check if already marked present
+    if (registration.attendance_status === 'attended') {
+      // Log duplicate scan attempt
+      const logStmt = db.prepare(`
+        INSERT INTO qr_scan_logs (registration_id, event_id, scanned_by, scan_result, scanner_info)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      logStmt.run(qrData.registrationId, eventId, scannedBy || 'unknown', 'duplicate', JSON.stringify(scannerInfo || {}));
+      
+      return res.status(200).json({ 
+        message: "Attendance already marked", 
+        participant: {
+          name: registration.individual_name || registration.team_leader_name,
+          email: registration.individual_email || registration.team_leader_email,
+          registrationId: registration.registration_id,
+          status: 'already_present'
+        }
+      });
+    }
+
+    const now = new Date().toISOString();
+
+    // Mark attendance as present using transaction
+    const transaction = db.transaction(() => {
+      // Update attendance
+      const upsertStmt = db.prepare(`
+        INSERT INTO attendance_status (registration_id, event_id, status, marked_at, marked_by)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(registration_id) DO UPDATE SET
+          status = excluded.status,
+          marked_at = excluded.marked_at,
+          marked_by = excluded.marked_by
+      `);
+      upsertStmt.run(registration.id, eventId, 'attended', now, scannedBy || 'qr_scanner');
+
+      // Log successful scan
+      const logStmt = db.prepare(`
+        INSERT INTO qr_scan_logs (registration_id, event_id, scanned_by, scan_result, scanner_info)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      logStmt.run(qrData.registrationId, eventId, scannedBy || 'qr_scanner', 'success', JSON.stringify(scannerInfo || {}));
+    });
+
+    transaction();
+
+    // Return success response with participant details
+    return res.status(200).json({
+      message: "Attendance marked successfully",
+      participant: {
+        name: registration.individual_name || registration.team_leader_name,
+        email: registration.individual_email || registration.team_leader_email,
+        registrationId: registration.registration_id,
+        registrationType: registration.registration_type,
+        teamName: registration.team_name,
+        status: 'marked_present',
+        markedAt: now
+      }
+    });
+
+  } catch (error) {
+    console.error("Error processing QR scan:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

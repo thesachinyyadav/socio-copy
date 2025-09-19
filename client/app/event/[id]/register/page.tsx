@@ -8,6 +8,7 @@ import {
   FetchedEvent as ContextFetchedEvent,
 } from "../../../../context/EventContext";
 import { useAuth } from "../../../../context/AuthContext";
+import { QRCodeDisplay } from "../../../_components/QRCodeDisplay";
 import moment from "moment";
 
 interface Teammate {
@@ -62,6 +63,8 @@ const Page = () => {
     teammates: [{}],
   });
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [registrationId, setRegistrationId] = useState<string | null>(null);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [registrationError, setRegistrationError] = useState<string | null>(
     null
   );
@@ -283,6 +286,8 @@ const Page = () => {
         setSubmitLoading(false);
 
         if (response.ok) {
+          const responseData = await response.json();
+          setRegistrationId(responseData.registration?.registration_id || null);
           setShowSuccessMessage(true);
         } else {
           const errorData = await response.json();
@@ -383,6 +388,31 @@ const Page = () => {
             <p className="text-gray-600 mb-6">
               You have successfully registered for {selectedEvent.title}.
             </p>
+
+            {/* QR Code Section */}
+            {registrationId && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-center mb-3">
+                  <svg className="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 16h4m-4-4h4m-4-4v1m0 0h-1m1-1V8a5 5 0 00-10 0v.01M8 7a3 3 0 016 0v.01M12 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-blue-800">Your Event Ticket</h3>
+                </div>
+                <p className="text-sm text-blue-700 mb-4">
+                  Your QR code ticket has been generated! Show this QR code at the event entrance for instant attendance marking.
+                </p>
+                <button
+                  onClick={() => setShowQRCode(true)}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 16h4m-4-4h4m-4-4v1m0 0h-1m1-1V8a5 5 0 00-10 0v.01M8 7a3 3 0 016 0v.01M12 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  View QR Code Ticket
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-around gap-3">
               <Link href={`/Discover`} className="w-full sm:w-auto">
                 <button className="w-full bg-[#154CB3] text-white py-2 px-6 rounded-full font-medium hover:bg-[#154cb3eb] transition-colors">
@@ -418,6 +448,20 @@ const Page = () => {
             </div>
           </div>
         </div>
+
+        {/* QR Code Display Modal */}
+        {showQRCode && registrationId && (
+          <QRCodeDisplay
+            registrationId={registrationId}
+            eventTitle={selectedEvent.title}
+            participantName={
+              isIndividualEvent
+                ? (userData?.name || "Participant")
+                : (formData.teamName || "Team")
+            }
+            onClose={() => setShowQRCode(false)}
+          />
+        )}
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import express from "express";
 import db from "../config/database.js";
 import { v4 as uuidv4 } from "uuid";
+import { generateQRCodeData, generateQRCodeImage } from "../utils/qrCodeUtils.js";
 
 const router = express.Router();
 
@@ -93,14 +94,23 @@ router.post("/register", async (req, res) => {
     // Generate registration ID
     const registration_id = uuidv4().replace(/-/g, '');
 
-    // Insert registration
+    // Determine participant email for QR generation
+    const participantEmail = registration_type === 'individual' ? 
+      (individual_email || user_email) : 
+      (team_leader_email || user_email);
+
+    // Generate QR code data
+    const qrCodeData = generateQRCodeData(registration_id, event_id, participantEmail);
+    const qrCodeString = JSON.stringify(qrCodeData);
+
+    // Insert registration with QR code data
     const insertStmt = db.prepare(`
       INSERT INTO registrations (
         registration_id, event_id, user_email, registration_type,
         individual_name, individual_email, individual_register_number,
         team_name, team_leader_name, team_leader_email, 
-        team_leader_register_number, teammates
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        team_leader_register_number, teammates, qr_code_data, qr_code_generated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertStmt.run(
@@ -115,7 +125,9 @@ router.post("/register", async (req, res) => {
       team_leader_name || null,
       team_leader_email || null,
       team_leader_register_number || null,
-      teammates ? JSON.stringify(teammates) : null
+      teammates ? JSON.stringify(teammates) : null,
+      qrCodeString,
+      new Date().toISOString()
     );
 
     // Update event participant count
@@ -190,6 +202,41 @@ router.get("/registrations/:registrationId", async (req, res) => {
 
   } catch (error) {
     console.error("Error fetching registration:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get QR code image for a registration
+router.get("/registrations/:registrationId/qr-code", async (req, res) => {
+  try {
+    const { registrationId } = req.params;
+
+    const stmt = db.prepare("SELECT qr_code_data, event_id FROM registrations WHERE registration_id = ?");
+    const registration = stmt.get(registrationId);
+
+    if (!registration) {
+      return res.status(404).json({ error: "Registration not found" });
+    }
+
+    if (!registration.qr_code_data) {
+      return res.status(404).json({ error: "QR code not found for this registration" });
+    }
+
+    try {
+      const qrData = JSON.parse(registration.qr_code_data);
+      const qrImage = await generateQRCodeImage(qrData);
+      
+      return res.status(200).json({ 
+        qrCodeImage: qrImage,
+        eventId: registration.event_id
+      });
+    } catch (error) {
+      console.error("Error generating QR code image:", error);
+      return res.status(500).json({ error: "Failed to generate QR code image" });
+    }
+
+  } catch (error) {
+    console.error("Error fetching QR code:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
