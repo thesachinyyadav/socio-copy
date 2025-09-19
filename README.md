@@ -42,6 +42,7 @@ A comprehensive platform for managing university fests and events, similar to "B
 - **Node.js + Express**: RESTful API server
 - **SQLite**: Local database with better-sqlite3
 - **File Upload**: Local file storage for images, banners, and PDFs
+- **Authentication**: Supabase Auth (Google OAuth) with JWT verification
 
 ## Quick Setup
 
@@ -52,7 +53,7 @@ git clone <repository-url>
 cd socio-copy
 
 # Run the automated setup script
-./setup.sh
+./setup.sh  # or setup_auth_only.sh for auth-only Supabase mode
 
 # Start the server (in one terminal)
 cd server && npm run dev
@@ -60,6 +61,10 @@ cd server && npm run dev
 # Start the client (in another terminal) 
 cd client && npm run dev
 ```
+
+> **For Windows Users**: Use `setup.bat` or `setup_auth_only.bat` instead
+>
+> **Note**: The `setup_auth_only.sh`/`setup_auth_only.bat` scripts will configure the application to use Supabase only for authentication and SQLite for all data. See [SUPABASE_AUTH_ONLY.md](SUPABASE_AUTH_ONLY.md) for more details.
 
 ### Option 2: Manual Setup
 

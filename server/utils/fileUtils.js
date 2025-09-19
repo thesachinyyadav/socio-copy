@@ -40,7 +40,8 @@ export const getPathFromStorageUrl = (url, bucketName) => {
   }
 };
 
-export async function uploadFileToSupabase(file, bucketName, eventIdForPath) {
+// Renamed to reflect that we're only using local storage now
+export async function uploadFileToLocal(file, bucketName, eventIdForPath) {
   if (!file) return null;
 
   await createDirectories();
@@ -73,3 +74,6 @@ export async function deleteFileFromLocal(filePath, bucketName) {
     console.warn(`Failed to delete file ${filePath} from ${bucketName}:`, error.message);
   }
 }
+
+// For backward compatibility
+export const uploadFileToSupabase = uploadFileToLocal;

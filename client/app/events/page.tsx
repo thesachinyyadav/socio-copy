@@ -154,7 +154,7 @@ const EventsPage = () => {
               Explore events
             </h1>
             <Link
-              href="/discover"
+              href="/Discover"
               className="flex items-center text-[#063168] hover:underline cursor-pointer text-xs sm:text-base"
             >
               <svg
@@ -171,7 +171,7 @@ const EventsPage = () => {
                   d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
                 />
               </svg>
-              Back to discovery
+              Back to Discovery
             </Link>
           </div>
           <p className="text-gray-500 mb-6 text-sm sm:text-base">

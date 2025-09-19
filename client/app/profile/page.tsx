@@ -171,7 +171,7 @@ const StudentProfile = () => {
       <div className="bg-[#063168] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <Link
-            href="/discover"
+            href="/Discover"
             className="flex items-center text-[#FFCC00] mb-4 sm:mb-6 hover:underline"
           >
             <svg
@@ -188,7 +188,7 @@ const StudentProfile = () => {
                 d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
               />
             </svg>
-            Back to discovery
+            Back to Discovery
           </Link>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
             Student Profile

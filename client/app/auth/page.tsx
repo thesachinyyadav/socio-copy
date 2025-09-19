@@ -14,7 +14,7 @@ export default function Page() {
     }
 
     if (session) {
-      router.replace("/discover");
+      router.replace("/Discover");
     } else {
       signInWithGoogle();
     }

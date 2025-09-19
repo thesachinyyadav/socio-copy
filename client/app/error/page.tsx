@@ -88,7 +88,7 @@ export default function BeepPage() {
             {isLoading ? "Processing..." : "Try Again with Google"}
           </button>
         )}
-        <a href={"/discover"}>
+        <a href={"/Discover"}>
           <button className="mt-4 w-full cursor-pointer font-semibold px-6 py-3 border-2 border-transparent hover:bg-[#f3f3f3] transition-all duration-200 ease-in-out text-md rounded-full text-[#154CB3]">
             <svg
               xmlns="http://www.w3.org/2000/svg"

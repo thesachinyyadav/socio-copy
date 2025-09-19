@@ -88,7 +88,7 @@ const UpcomingEvents = () => {
           No upcoming events scheduled at the moment. Check back soon or explore
           all events!
         </p>
-        <Link href="/discover">
+        <Link href="/Discover">
           <button className="hover:border-[#154cb3df] hover:bg-[#154cb3df] transition-all duration-200 ease-in-out cursor-pointer font-semibold px-3 py-1.5 sm:px-4 sm:py-2 my-4 sm:my-6 md:mt-10 border-2 border-[#154CB3] text-xs sm:text-sm rounded-full text-white bg-[#154CB3]">
             Explore All Events
           </button>
@@ -129,7 +129,7 @@ const UpcomingEvents = () => {
           );
         })}
       </div>
-      <Link href="/discover">
+      <Link href="/Discover">
         <button className="hover:border-[#154cb3df] hover:bg-[#154cb3df] transition-all duration-200 ease-in-out cursor-pointer font-semibold px-3 py-1.5 sm:px-4 sm:py-2 my-4 sm:my-6 md:mt-10 border-2 border-[#154CB3] text-xs sm:text-sm rounded-full text-white bg-[#154CB3]">
           View more events
         </button>

@@ -12,7 +12,7 @@ export default function Footer() {
         <div className="flex flex-col gap-8 sm:gap-12 md:gap-16">
           <div className="flex flex-col md:flex-row justify-between gap-8 md:gap-16">
             <div className="md:w-1/3">
-              <Link href={session ? "/discover" : "/"}>
+              <Link href={session ? "/Discover" : "/"}>
                 <Image
                   src={Logo}
                   alt="Logo"

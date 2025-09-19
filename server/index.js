@@ -5,12 +5,14 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import db, { initializeDatabase } from "./config/database.js";
 
+// Using SQLite-based routes only - no Supabase database access
 import userRoutes from "./routes/userRoutes.js";
-import eventRoutes from "./routes/eventRoutes.js";
+import eventRoutes from "./routes/eventRoutes_secured.js";  // Using secured routes
 import festRoutes from "./routes/festRoutes.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 dotenv.config();
 
@@ -33,6 +35,7 @@ app.use("/api/fests", festRoutes);
 app.use("/api", registrationRoutes);
 app.use("/api", attendanceRoutes);
 app.use("/api", notificationRoutes);
+app.use("/api", uploadRoutes);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

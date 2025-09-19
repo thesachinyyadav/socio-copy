@@ -1118,28 +1118,32 @@ function CreateFestForm(props?: CreateFestProps) {
     if (imageFile && supabase) {
       setIsUploadingImage(true);
       try {
-        const fileName = `${Date.now()}_${imageFile.name.replace(/\s+/g, "_")}`;
-        const filePath = `public/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("fest-images")
-          .upload(filePath, imageFile, {
-            cacheControl: "3600",
-            upsert: isEditMode,
-          });
-
-        if (uploadError) {
-          throw uploadError;
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        
+        // Use the server's file upload API instead of Supabase storage
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const uploadResponse = await fetch(`${API_URL}/api/upload/fest-image`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            // No Content-Type header as it's set automatically for FormData
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image to server');
         }
-
-        const { data: publicUrlData } = supabase.storage
-          .from("fest-images")
-          .getPublicUrl(filePath);
-
-        if (!publicUrlData || !publicUrlData.publicUrl) {
-          throw new Error("Failed to get public URL for the uploaded image.");
+        
+        const uploadResult = await uploadResponse.json();
+        
+        if (!uploadResult || !uploadResult.url) {
+          throw new Error("Failed to get URL for the uploaded image.");
         }
-        uploadedFestImageUrl = publicUrlData.publicUrl;
+        
+        // Use the URL returned from our server API
+        uploadedFestImageUrl = uploadResult.url;
       } catch (uploadError: any) {
         setErrors((prev) => ({
           ...prev,

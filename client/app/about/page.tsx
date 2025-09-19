@@ -118,7 +118,7 @@ const AboutPage = () => {
               college life.
             </p>
             <Link
-              href="/discover"
+              href="/Discover"
               className="inline-flex items-center justify-center w-auto bg-[#FFCC00] text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-[#ffcc00eb] transition-all"
             >
               Explore events
@@ -185,7 +185,7 @@ const AboutPage = () => {
           </h2>
           <p className="text-gray-700 text-base md:text-lg mb-12 text-center max-w-3xl mx-auto">
             SOCIO provides a comprehensive suite of tools to enhance your campus
-            experience, making it easier to discover, participate, and organize.
+            experience, making it easier to Discover, participate, and organize.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
@@ -379,13 +379,13 @@ const AboutPage = () => {
             Ready to get started with SOCIO?
           </h2>
           <p className="text-lg md:text-xl opacity-90 mb-8 max-w-3xl mx-auto text-gray-300">
-            Join thousands of students already using SOCIO to discover events,
+            Join thousands of students already using SOCIO to Discover events,
             connect with clubs, and enhance their campus experience.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {" "}
             <Link
-              href="/discover"
+              href="/Discover"
               className="w-full sm:w-auto justify-center cursor-pointer font-semibold px-4 py-2 border-2 border-[#FFCC00] hover:bg-[#ffcc00f0] transition-all ease-in-out text-sm rounded-full text-[#1e1e1e] bg-[#ffcc00] flex items-center"
             >
               Explore events

@@ -473,10 +473,10 @@ export default function Page() {
           </p>
           <div className="flex flex-col sm:flex-row justify-around gap-4">
             <button
-              onClick={() => router.push("/discover")}
+              onClick={() => router.push("/Discover")}
               className="bg-[#154CB3] cursor-pointer text-white py-2 px-6 rounded-full font-medium hover:bg-[#154cb3eb] transition-colors"
             >
-              Back to discover
+              Back to Discover
             </button>
             {eventData.whatsappLink && (
               <a

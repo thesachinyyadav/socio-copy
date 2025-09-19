@@ -37,10 +37,10 @@ const navigationLinks = [
   },
   {
     name: "Events",
-    href: "/discover",
+    href: "/Discover",
     dropdown: [
-      { name: "Upcoming Events", href: "/discover?filter=upcoming" },
-      { name: "Past Events", href: "/discover?filter=past" },
+      { name: "Upcoming Events", href: "/Discover?filter=upcoming" },
+      { name: "Past Events", href: "/Discover?filter=past" },
       { name: "My Events", href: "/my-events" }
     ]
   },
@@ -71,8 +71,8 @@ export default function NavigationBar() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to discover page with search query
-      window.location.href = `/discover?search=${encodeURIComponent(searchQuery.trim())}`;
+      // Navigate to Discover page with search query
+      window.location.href = `/Discover?search=${encodeURIComponent(searchQuery.trim())}`;
     }
   };
 
@@ -97,7 +97,7 @@ export default function NavigationBar() {
       <nav className="w-full flex items-center pt-8 pb-7 px-6 md:px-12 text-[#154CB3] select-none relative">
         {/* Logo */}
         <div className="flex-shrink-0">
-          <Link href={session ? "/discover" : "/"}>
+          <Link href={session ? "/Discover" : "/"}>
             <Image
               src={Logo}
               alt="Logo"

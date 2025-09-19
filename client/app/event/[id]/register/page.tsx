@@ -384,9 +384,9 @@ const Page = () => {
               You have successfully registered for {selectedEvent.title}.
             </p>
             <div className="flex flex-col sm:flex-row justify-around gap-3">
-              <Link href={`/discover`} className="w-full sm:w-auto">
+              <Link href={`/Discover`} className="w-full sm:w-auto">
                 <button className="w-full bg-[#154CB3] text-white py-2 px-6 rounded-full font-medium hover:bg-[#154cb3eb] transition-colors">
-                  Back to discover
+                  Back to Discover
                 </button>
               </Link>
               {selectedEvent.whatsapp_invite_link && (

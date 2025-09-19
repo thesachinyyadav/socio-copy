@@ -72,7 +72,7 @@ const CTA = () => {
         and experience more.
       </h1>
       <p className="mt-4 sm:mt-6 text-[#ffffff97] text-base sm:text-lg text-center px-4">
-        Join thousands of students who are already discovering, attending, and{" "}
+        Join thousands of students who are already Discovering, attending, and{" "}
         <br className="hidden md:flex" />
         sharing campus events through SOCIO.
       </p>

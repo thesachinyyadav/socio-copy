@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${APP_URL}/error?error=invalid_domain`);
     }
 
-    return NextResponse.redirect(`${APP_URL}/discover`);
+    return NextResponse.redirect(`${APP_URL}/Discover`);
   } catch (error) {
     console.error("Unexpected error in auth callback:", error);
     const supabaseClient = createRouteHandlerClient({
