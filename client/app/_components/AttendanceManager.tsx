@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { QRScanner } from "./QRScanner";
 
 interface Participant {
   id: string;
@@ -27,6 +28,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const { userData, session } = useAuth();
 
   useEffect(() => {
@@ -54,7 +56,20 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({
       }
 
       const data = await response.json();
-      setParticipants(data.participants || []);
+      
+      // Map API response to Participant interface
+      const mappedParticipants = data.participants?.map((p: any) => ({
+        id: p.id,
+        name: p.individual_name || p.team_leader_name || 'Unknown',
+        email: p.individual_email || p.team_leader_email || '',
+        registerNumber: p.individual_register_number || p.team_leader_register_number || '',
+        teamName: p.registration_type === 'team' ? p.team_name : undefined,
+        status: p.attendance_status === 'attended' ? 'attended' : 
+               p.attendance_status === 'absent' ? 'absent' : 'registered',
+        attendedAt: p.marked_at || undefined
+      })) || [];
+      
+      setParticipants(mappedParticipants);
     } catch (err: any) {
       setError(err.message || "Failed to load participants");
       console.error("Error fetching participants:", err);
@@ -76,10 +91,9 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            participantId,
+            participantIds: [participantId],
             status,
             markedBy: userData?.email,
-            timestamp: new Date().toISOString(),
           }),
         }
       );
@@ -128,6 +142,11 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleQRScanSuccess = (result: any) => {
+    // Refresh participants list to show updated attendance
+    fetchParticipants();
   };
 
   const filteredParticipants = participants.filter(p => {
@@ -182,15 +201,26 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({
           <h2 className="text-2xl font-bold text-[#063168]">
             Attendance - {eventTitle}
           </h2>
-          <button
-            onClick={exportAttendance}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export CSV
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => setShowQRScanner(true)}
+              className="px-4 py-2 bg-[#154CB3] text-white rounded-lg hover:bg-[#063168] transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 16h4m-4-4h4m-4-4v1m0 0h-1m1-1V8a5 5 0 00-10 0v.01M8 7a3 3 0 016 0v.01M12 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              QR Scanner
+            </button>
+            <button
+              onClick={exportAttendance}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -320,6 +350,16 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({
           </div>
         )}
       </div>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScanner
+          eventId={eventId}
+          eventTitle={eventTitle}
+          onScanSuccess={handleQRScanSuccess}
+          onClose={() => setShowQRScanner(false)}
+        />
+      )}
     </div>
   );
 };
