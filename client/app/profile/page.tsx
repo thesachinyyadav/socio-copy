@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 
 interface DisplayableEvent {
   id: string;
+  event_id: string;
   name: string;
   date: string;
   department: string;
@@ -13,6 +14,7 @@ interface DisplayableEvent {
 
 interface FetchedUserEvent {
   id: string;
+  event_id?: string;
   name: string;
   date: string;
   department: string;
@@ -122,6 +124,7 @@ const StudentProfile = () => {
 
                 return {
                   id: event.id,
+                  event_id: event.event_id || event.id, // fallback to id if event_id not available
                   name: event.name,
                   date: formattedDate,
                   department: event.department,
@@ -365,7 +368,7 @@ const StudentProfile = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <Link href={`/event/${event.id}`}>
+                          <Link href={`/event/${event.event_id}`}>
                             <h3
                               className={`font-semibold ${
                                 event.status === "upcoming"

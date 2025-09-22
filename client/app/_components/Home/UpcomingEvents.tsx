@@ -119,7 +119,7 @@ const UpcomingEvents = () => {
             location: event.location,
             tags: event.tags.slice(0, 4),
             image: event.image,
-            idForLink: String(event.id),
+            idForLink: String(event.event_id),
           };
 
           return (

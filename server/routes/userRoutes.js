@@ -40,11 +40,27 @@ router.post("/", async (req, res) => {
         .json({ error: "Invalid user data: email is required" });
     }
 
-    // Check if user already exists
-    const checkStmt = db.prepare("SELECT * FROM users WHERE email = ?");
-    const existingUser = checkStmt.get(authClientUser.email);
+    // Check if user already exists by email or auth_uuid
+    const checkStmt = db.prepare("SELECT * FROM users WHERE email = ? OR (auth_uuid IS NOT NULL AND auth_uuid = ?)");
+    const existingUser = checkStmt.get(authClientUser.email, authClientUser.id);
 
     if (existingUser) {
+      // If user exists but doesn't have auth_uuid, update it
+      if (!existingUser.auth_uuid && authClientUser.id) {
+        const updateStmt = db.prepare("UPDATE users SET auth_uuid = ? WHERE email = ?");
+        updateStmt.run(authClientUser.id, authClientUser.email);
+        
+        // Get updated user
+        const getUpdatedStmt = db.prepare("SELECT * FROM users WHERE email = ?");
+        const updatedUser = getUpdatedStmt.get(authClientUser.email);
+        
+        return res.status(200).json({
+          user: updatedUser,
+          isNew: false,
+          message: "User updated with auth UUID.",
+        });
+      }
+      
       return res.status(200).json({
         user: existingUser,
         isNew: false,
@@ -74,11 +90,12 @@ router.post("/", async (req, res) => {
       null;
 
     const insertStmt = db.prepare(`
-      INSERT INTO users (email, name, avatar_url, is_organiser, course)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO users (auth_uuid, email, name, avatar_url, is_organiser, course)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertStmt.run(
+      authClientUser.id || null,
       authClientUser.email,
       name || "New User",
       avatarUrl,

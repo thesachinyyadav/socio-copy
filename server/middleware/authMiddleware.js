@@ -17,7 +17,15 @@ export const authenticateUser = async (req, res, next) => {
     // Verify token with Supabase - ONLY used for Google auth token validation
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
-    if (error || !user) {
+    if (error) {
+      console.error('Token validation error:', error);
+      if (error.message.includes('Invalid token') || error.message.includes('expired')) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
+      return res.status(401).json({ error: 'Token validation failed: ' + error.message });
+    }
+    
+    if (!user) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
@@ -28,7 +36,7 @@ export const authenticateUser = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-    return res.status(500).json({ error: 'Authentication service error' });
+    return res.status(500).json({ error: 'Authentication service error: ' + error.message });
   }
 };
 

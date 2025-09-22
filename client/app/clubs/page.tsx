@@ -42,7 +42,7 @@ const CentresPage = () => {
         "Enhances understanding and support for neurodiverse individuals by fostering research and innovation, creating inclusive environments, and advancing societal awareness and acceptance.",
       link: "Centre for Neurodiversity Research and Innovation",
       image:
-        "https://img.recraft.ai/Zt49_qX8AzcI6jLJHYYoNAMb0w92XOMOgNZEBWV0NnE/rs:fit:2048:1024:0/q:95/g:no/plain/abs://prod/images/63d79516-7e3d-4f1f-a4cb-d71689f0f093@jpg",
+        "https://christuniversity.in/uploads/centers/thumb/472543836_2024-02-08_04-05-53.jpg",
     },
     {
       id: 2,

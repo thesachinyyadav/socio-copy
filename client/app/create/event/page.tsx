@@ -24,6 +24,14 @@ export default function CreateEventPage() {
     let token;
     try {
       console.log("CreateEventPage: Attempting to get session...");
+      
+      // First, try to refresh the session to ensure we have a valid token
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.warn("CreateEventPage: Session refresh failed, trying to get existing session:", refreshError);
+      }
+      
       const {
         data: { session },
         error: sessionError,
@@ -34,20 +42,36 @@ export default function CreateEventPage() {
           "CreateEventPage: Session error or no session.",
           sessionError
         );
-        alert("Authentication error or no active session. Please log in.");
+        alert("Authentication error or no active session. Please log in again.");
         setIsSubmitting(false);
-        throw new Error(sessionError?.message || "User not authenticated.");
+        // Redirect to auth page
+        window.location.href = '/auth';
+        return;
       }
+      
       token = session.access_token;
       console.log("CreateEventPage: Session obtained, token acquired.");
+      
+      // Verify token is not expired
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (tokenPayload.exp <= currentTime) {
+        console.error("CreateEventPage: Token has expired");
+        alert("Your session has expired. Please log in again.");
+        setIsSubmitting(false);
+        window.location.href = '/auth';
+        return;
+      }
+      
     } catch (e: any) {
       console.error("CreateEventPage: Unexpected error getting session:", e);
       alert(
-        e.message ||
-          "An unexpected error occurred while verifying your session."
+        "An unexpected error occurred while verifying your session. Please log in again."
       );
       setIsSubmitting(false);
-      throw e;
+      window.location.href = '/auth';
+      return;
     }
 
     const formData = new FormData();
@@ -74,41 +98,41 @@ export default function CreateEventPage() {
       }
     };
 
-    appendIfExists("eventTitle", dataFromHookForm.eventTitle);
-    appendIfExists("eventDate", dataFromHookForm.eventDate);
-    appendIfExists("endDate", dataFromHookForm.endDate);
-    appendIfExists("eventTime", dataFromHookForm.eventTime);
-    appendIfExists("detailedDescription", dataFromHookForm.detailedDescription);
+    appendIfExists("title", dataFromHookForm.eventTitle);
+    appendIfExists("event_date", dataFromHookForm.eventDate);
+    appendIfExists("end_date", dataFromHookForm.endDate);
+    appendIfExists("event_time", dataFromHookForm.eventTime);
+    appendIfExists("description", dataFromHookForm.detailedDescription);
 
-    appendIfExists("organizingDept", dataFromHookForm.organizingDept);
+    appendIfExists("organizing_dept", dataFromHookForm.organizingDept);
 
-    appendJsonArrayOrObject("department", dataFromHookForm.department);
+    appendJsonArrayOrObject("department_access", dataFromHookForm.department);
 
     appendIfExists("category", dataFromHookForm.category);
-    appendIfExists("festEvent", dataFromHookForm.festEvent);
+    appendIfExists("fest", dataFromHookForm.festEvent);
     appendIfExists(
-      "registrationDeadline",
+      "registration_deadline",
       dataFromHookForm.registrationDeadline
     );
-    appendIfExists("location", dataFromHookForm.location);
+    appendIfExists("venue", dataFromHookForm.location);
 
-    appendIfExists("registrationFee", dataFromHookForm.registrationFee);
-    appendIfExists("maxParticipants", dataFromHookForm.maxParticipants);
+    appendIfExists("registration_fee", dataFromHookForm.registrationFee);
+    appendIfExists("max_participants", dataFromHookForm.maxParticipants);
 
-    appendIfExists("contactEmail", dataFromHookForm.contactEmail);
-    appendIfExists("contactPhone", dataFromHookForm.contactPhone);
-    appendIfExists("whatsappLink", dataFromHookForm.whatsappLink);
+    appendIfExists("organizer_email", dataFromHookForm.contactEmail);
+    appendIfExists("organizer_phone", dataFromHookForm.contactPhone);
+    appendIfExists("whatsapp_invite_link", dataFromHookForm.whatsappLink);
 
-    formData.append("provideClaims", String(dataFromHookForm.provideClaims));
+    formData.append("claims_applicable", String(dataFromHookForm.provideClaims));
     formData.append(
-      "sendNotifications",
+      "send_notifications",
       String(dataFromHookForm.sendNotifications)
     );
 
-    appendJsonArrayOrObject("scheduleItems", dataFromHookForm.scheduleItems);
+    appendJsonArrayOrObject("schedule", dataFromHookForm.scheduleItems);
     appendJsonArrayOrObject("rules", dataFromHookForm.rules);
     appendJsonArrayOrObject("prizes", dataFromHookForm.prizes);
-    appendJsonArrayOrObject("eventHeads", dataFromHookForm.eventHeads);
+    appendJsonArrayOrObject("event_heads", dataFromHookForm.eventHeads);
 
     if (dataFromHookForm.imageFile instanceof File) {
       formData.append("imageFile", dataFromHookForm.imageFile);

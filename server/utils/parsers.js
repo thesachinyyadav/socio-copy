@@ -10,16 +10,16 @@ export function parseOptionalFloat(value) {
   return isNaN(num) ? null : num;
 }
 
-export function parseOptionalInt(value, radix = 10) {
+export function parseOptionalInt(value, defaultValue = null) {
   if (value === undefined || value === null) {
-    return null;
+    return defaultValue;
   }
   const strValue = String(value).trim();
   if (strValue === "") {
-    return null;
+    return defaultValue;
   }
-  const num = parseInt(strValue, radix);
-  return isNaN(num) ? null : num;
+  const num = parseInt(strValue, 10);
+  return isNaN(num) ? defaultValue : num;
 }
 
 export const parseJsonField = (valStr, defaultVal) => {

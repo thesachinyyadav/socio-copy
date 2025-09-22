@@ -167,8 +167,7 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet" />
       </head>
       <body
-        className="font-sans antialiased bg-[#FFFFFF] text-[#101010]"
-        style={{ fontFamily: '"DM Sans", sans-serif' }}
+        className="font-sans antialiased bg-[#FFFFFF] text-[#101010] font-[DM_Sans]"
       >
         <AuthProvider>
           <EventsProvider

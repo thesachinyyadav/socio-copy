@@ -88,6 +88,13 @@ router.post(
       pdf: null,
     };
 
+    console.log("POST /api/events - Request received");
+    console.log("Headers:", req.headers);
+    console.log("Body keys:", Object.keys(req.body));
+    console.log("Files:", req.files ? Object.keys(req.files) : 'No files');
+    console.log("User ID:", req.userId);
+    console.log("User Info:", req.userInfo);
+
     try {
       const {
         title,
@@ -104,8 +111,7 @@ router.post(
         rules,
         schedule,
         prizes,
-        max_participants,
-        tags
+        max_participants
       } = req.body;
 
       // Validation
@@ -113,19 +119,37 @@ router.post(
         return res.status(400).json({ error: "Title is required and must be a non-empty string." });
       }
 
+      console.log("Validation passed, data:", {
+        title: title?.trim(),
+        event_date,
+        venue,
+        category,
+        claims_applicable,
+        max_participants
+      });
+
       // Generate event ID
       const event_id = uuidv4();
+      console.log("Generated event_id:", event_id);
 
       // Handle file uploads
       const files = req.files;
-      if (files.imageFile) {
-        uploadedFilePaths.image = await uploadFileToSupabase(files.imageFile[0], "event-images", event_id);
-      }
-      if (files.bannerFile) {
-        uploadedFilePaths.banner = await uploadFileToSupabase(files.bannerFile[0], "event-banners", event_id);
-      }
-      if (files.pdfFile) {
-        uploadedFilePaths.pdf = await uploadFileToSupabase(files.pdfFile[0], "event-pdfs", event_id);
+      try {
+        if (files?.imageFile && files.imageFile[0]) {
+          uploadedFilePaths.image = await uploadFileToSupabase(files.imageFile[0], "event-images", event_id);
+        }
+        if (files?.bannerFile && files.bannerFile[0]) {
+          uploadedFilePaths.banner = await uploadFileToSupabase(files.bannerFile[0], "event-banners", event_id);
+        }
+        if (files?.pdfFile && files.pdfFile[0]) {
+          uploadedFilePaths.pdf = await uploadFileToSupabase(files.pdfFile[0], "event-pdfs", event_id);
+        }
+      } catch (fileUploadError) {
+        console.error("File upload error:", fileUploadError);
+        // Continue without file uploads - don't fail the entire event creation
+        uploadedFilePaths.image = null;
+        uploadedFilePaths.banner = null;
+        uploadedFilePaths.pdf = null;
       }
 
       // Parse and validate JSON fields
@@ -133,16 +157,25 @@ router.post(
       const parsedRules = parseJsonField(rules, []);
       const parsedSchedule = parseJsonField(schedule, []);
       const parsedPrizes = parseJsonField(prizes, []);
-      const parsedTags = parseJsonField(tags, []);
+
+      console.log("About to insert into database with params:", {
+        event_id,
+        title: title?.trim(),
+        description: description || null,
+        event_date: event_date || null,
+        max_participants_parsed: parseOptionalInt(max_participants, 1),
+        uploadedFiles: uploadedFilePaths
+      });
 
       // Insert event with creator's auth_uuid
       const insertStmt = db.prepare(`
         INSERT INTO events (
-          event_id, title, description, event_date, event_time, venue, category,
-          claims_applicable, registration_fee, event_image_url, banner_url, pdf_url,
-          organizing_dept, fest, department_access, rules, schedule, prizes,
-          max_participants, tags, auth_uuid, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          event_id, title, description, event_date, event_time, end_date, venue, category,
+          department_access, claims_applicable, registration_fee, participants_per_team,
+          event_image_url, banner_url, pdf_url, rules, schedule, prizes,
+          organizer_email, organizer_phone, whatsapp_invite_link, organizing_dept, fest,
+          created_by, registration_deadline, total_participants, max_participants
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const result = insertStmt.run(
@@ -151,22 +184,28 @@ router.post(
         description || null,
         event_date || null,
         event_time || null,
+        req.body.end_date || null,
         venue || null,
         category || null,
-        claims_applicable === "true" || claims_applicable === true,
+        JSON.stringify(parsedDepartmentAccess),
+        claims_applicable === "true" || claims_applicable === true ? 1 : 0,
         parseOptionalFloat(registration_fee),
+        parseOptionalInt(max_participants, 1), // participants_per_team
         uploadedFilePaths.image,
         uploadedFilePaths.banner,
         uploadedFilePaths.pdf,
-        organizing_dept || null,
-        fest || null,
-        JSON.stringify(parsedDepartmentAccess),
         JSON.stringify(parsedRules),
         JSON.stringify(parsedSchedule),
         JSON.stringify(parsedPrizes),
-        parseOptionalInt(max_participants),
-        JSON.stringify(parsedTags),
-        req.userId  // Creator's auth_uuid
+        req.body.organizer_email || req.userInfo?.email || null,
+        req.body.organizer_phone || null,
+        req.body.whatsapp_invite_link || null,
+        organizing_dept || null,
+        fest || null,
+        req.userId, // created_by (Creator's auth_uuid)
+        req.body.registration_deadline || null,
+        0, // total_participants (default to 0)
+        parseOptionalInt(max_participants) // max_participants
       );
 
       if (result.changes === 0) {
@@ -181,6 +220,14 @@ router.post(
 
     } catch (error) {
       console.error("Server error POST /api/events:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        requestBody: Object.keys(req.body),
+        userId: req.userId,
+        userInfo: req.userInfo?.email
+      });
       
       // Clean up uploaded files on error
       try {
@@ -193,7 +240,10 @@ router.post(
         console.error("Error cleaning up files:", cleanupError);
       }
 
-      return res.status(500).json({ error: "Internal server error while creating event." });
+      return res.status(500).json({ 
+        error: "Internal server error while creating event.",
+        details: error.message // Include error message for debugging
+      });
     }
   }
 );

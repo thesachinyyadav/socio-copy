@@ -3,6 +3,7 @@
 import React from "react";
 import Footer from "../_components/Home/Footer";
 import Link from "next/link";
+import Image from "next/image";
 import FAQSection from "../_components/Home/FAQs";
 
 const AboutPage = () => {
@@ -143,14 +144,21 @@ const AboutPage = () => {
 
       <section className="py-12 md:py-16 container mx-auto px-4 max-w-7xl">
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center">
-          <div className="md:w-1/2">
-            <img
-              src="https://img.recraft.ai/R9V1N4wvzo_EimtRVqMjVa7KCIAFxiGxa2YemSCmSSA/rs:fit:1365:1024:0/q:95/g:no/plain/abs://prod/images/f3f393ab-fbbb-4d73-b254-07373aa12e21@jpg"
-              alt="Students using SOCIO platform"
-              className="rounded-lg shadow-lg w-full" // Added shadow
-            />
-          </div>
-          <div className="md:w-1/2">
+          
+            <div className="md:w-1/2">
+            <video
+              src="https://christuniversity.in/uploads/banners/815015418_2025-06-28_03-56-27.mp4"
+              title="Students using SOCIO platform"
+              className="rounded-lg shadow-lg w-full"
+              controls
+              autoPlay
+              muted
+              loop
+            >
+              Your browser does not support the video tag.
+            </video>
+            </div>
+            <div className="md:w-1/2">
             <h2 className="text-2xl md:text-3xl font-black text-[#154CB3] mb-6">
               Our Mission
             </h2>
@@ -215,13 +223,55 @@ const AboutPage = () => {
         <h2 className="text-2xl md:text-3xl font-black text-[#154CB3] mb-6 text-center">
           Our Impact
         </h2>
-        <p className="text-gray-700 text-base md:text-lg mb-12 text-center max-w-3xl mx-auto">
+        
+        <div className="mb-8 flex flex-col items-center">
+          <div className="relative w-full max-w-2xl mx-auto overflow-hidden rounded-lg shadow-lg mb-6">
+            <Image
+              src="/sachinsuryameeth.jpg"
+              alt="Sachin, Surya, and Meeth - Founders of SOCIO"
+              width={800}
+              height={400}
+              priority
+              className="w-full h-auto object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#154CB3]/80 to-transparent p-4">
+              <p className="text-white text-center font-medium">
+          Our founders: Sachin, Surya, and Meeth
+              </p>
+            </div>
+          </div>
+          <div className="w-16 h-1 bg-[#FFCC00] rounded-full mb-6"></div>
+        </div>
+        <p className="text-gray-700 text-base md:text-lg mb-10 text-center max-w-3xl mx-auto">
           Socio was born from a simple idea pitched by Meeth during a college
           competition—and it resonated. Joined by Surya and Sachin, the team
           turned it into a reality. Today, Socio aims to help students across
           campuses stay informed, engaged, and connected with their college
           communities like never before.
         </p>
+
+        {/* Animated Stats Section */}
+        <div className="bg-gradient-to-r from-[#154CB3] to-[#063168] py-8 px-4 rounded-xl mb-12">
+          <h3 className="text-xl md:text-2xl font-bold text-white text-center mb-8">Our Impact in Numbers</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div className="flex flex-col items-center">
+              <div className="text-3xl md:text-4xl font-black text-white mb-2">4</div>
+              <div className="text-sm md:text-base text-gray-200">Colleges</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-3xl md:text-4xl font-black text-white mb-2">20</div>
+              <div className="text-sm md:text-base text-gray-200">Events Managed</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-3xl md:text-4xl font-black text-white mb-2">5,000+</div>
+              <div className="text-sm md:text-base text-gray-200">Student Users</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-3xl md:text-4xl font-black text-white mb-2">98%</div>
+              <div className="text-sm md:text-base text-gray-200">Satisfaction Rate</div>
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 text-center">
           <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border-t-4 border-[#FFCC00]">
@@ -304,7 +354,144 @@ const AboutPage = () => {
         </div>
       </section>
 
+      {/* Journey Timeline Section */}
+      <section className="py-12 md:py-16 bg-gray-50">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <h2 className="text-2xl md:text-3xl font-black text-[#154CB3] mb-6 text-center">
+            Our Journey
+          </h2>
+          <p className="text-gray-700 text-base md:text-lg mb-12 text-center max-w-3xl mx-auto">
+            From a simple idea to a platform serving thousands of students across colleges.
+          </p>
+
+          <div className="relative max-w-4xl mx-auto">
+            {/* Vertical Line */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-[#154CB3] z-0"></div>
+            
+            {/* Timeline Items */}
+            <div className="relative z-10">
+              {/* Item 1 */}
+              <div className="flex flex-col md:flex-row items-center mb-12">
+                <div className="md:w-1/2 md:pr-8 mb-4 md:mb-0 md:text-right">
+                  <h3 className="text-xl font-bold text-[#154CB3]">The Idea</h3>
+                  <p className="text-gray-600 text-sm mt-1">December 2023</p>
+                  <p className="mt-2 text-gray-700">Meeth pitched the concept of SOCIO during a college hackathon, winning first place.</p>
+                </div>
+                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
+                  <span className="text-white font-bold">1</span>
+                </div>
+                <div className="md:w-1/2 md:pl-8 md:text-left"></div>
+              </div>
+              
+              {/* Item 2 */}
+              <div className="flex flex-col md:flex-row items-center mb-12">
+                <div className="md:w-1/2 md:pr-8 md:text-right"></div>
+                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
+                  <span className="text-white font-bold">2</span>
+                </div>
+                <div className="md:w-1/2 md:pl-8 mb-4 md:mb-0 md:text-left">
+                  <h3 className="text-xl font-bold text-[#154CB3]">Team Formation</h3>
+                  <p className="text-gray-600 text-sm mt-1">January 2024</p>
+                  <p className="mt-2 text-gray-700">Surya and Sachin joined the team, bringing their expertise in design and development.</p>
+                </div>
+              </div>
+              
+              {/* Item 3 */}
+              <div className="flex flex-col md:flex-row items-center mb-12">
+                <div className="md:w-1/2 md:pr-8 mb-4 md:mb-0 md:text-right">
+                  <h3 className="text-xl font-bold text-[#154CB3]">Beta Launch</h3>
+                  <p className="text-gray-600 text-sm mt-1">March 2024</p>
+                  <p className="mt-2 text-gray-700">First version of SOCIO deployed at our own college with 500 initial users.</p>
+                </div>
+                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
+                  <span className="text-white font-bold">3</span>
+                </div>
+                <div className="md:w-1/2 md:pl-8 md:text-left"></div>
+              </div>
+              
+              {/* Item 4 */}
+              <div className="flex flex-col md:flex-row items-center">
+                <div className="md:w-1/2 md:pr-8 md:text-right"></div>
+                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
+                  <span className="text-white font-bold">4</span>
+                </div>
+                <div className="md:w-1/2 md:pl-8 mb-4 md:mb-0 md:text-left">
+                  <h3 className="text-xl font-bold text-[#154CB3]">Multi-campus Expansion</h3>
+                  <p className="text-gray-600 text-sm mt-1">September 2025</p>
+                  <p className="mt-2 text-gray-700">Now serving 20+ colleges and over 5,000 students across the region.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
       <section className="py-12 md:py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <h2 className="text-2xl md:text-3xl font-black text-[#154CB3] mb-6 text-center">
+            What People Are Saying
+          </h2>
+          <p className="text-gray-700 text-base md:text-lg mb-12 text-center max-w-3xl mx-auto">
+            Hear from students and faculty who have experienced the difference SOCIO makes.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {/* Testimonial 1 */}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm relative">
+              <div className="text-[#154CB3] text-5xl font-serif absolute -top-4 left-4">"</div>
+              <p className="text-gray-700 italic mb-6 pt-4">
+                SOCIO has completely transformed how our club manages events. The QR attendance system saves us hours of manual work!
+              </p>
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-[#154CB3] flex items-center justify-center text-white font-bold">
+                  A
+                </div>
+                <div className="ml-3">
+                  <p className="font-bold text-gray-800">Anjali Mehta</p>
+                  <p className="text-sm text-gray-600">Club President, Tech Club</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm relative">
+              <div className="text-[#154CB3] text-5xl font-serif absolute -top-4 left-4">"</div>
+              <p className="text-gray-700 italic mb-6 pt-4">
+                As a faculty advisor, I've seen firsthand how SOCIO has increased student participation in department events by over 40%.
+              </p>
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-[#154CB3] flex items-center justify-center text-white font-bold">
+                  R
+                </div>
+                <div className="ml-3">
+                  <p className="font-bold text-gray-800">Dr. Rahul Sharma</p>
+                  <p className="text-sm text-gray-600">Associate Professor, Computer Science</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm relative">
+              <div className="text-[#154CB3] text-5xl font-serif absolute -top-4 left-4">"</div>
+              <p className="text-gray-700 italic mb-6 pt-4">
+                I used to miss half the campus events because I'd find out too late. With SOCIO, I'm always in the loop and have made so many more connections.
+              </p>
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-[#154CB3] flex items-center justify-center text-white font-bold">
+                  P
+                </div>
+                <div className="ml-3">
+                  <p className="font-bold text-gray-800">Priya Desai</p>
+                  <p className="text-sm text-gray-600">2nd Year Student, Engineering</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4 max-w-7xl">
           <h2 className="text-2xl md:text-3xl font-black text-[#154CB3] mb-6 text-center">
             Share Your Feedback
@@ -379,7 +566,7 @@ const AboutPage = () => {
             Ready to get started with SOCIO?
           </h2>
           <p className="text-lg md:text-xl opacity-90 mb-8 max-w-3xl mx-auto text-gray-300">
-            Join thousands of students already using SOCIO to Discover events,
+            Join thousands of students already using SOCIO to Discover evens,
             connect with clubs, and enhance their campus experience.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
