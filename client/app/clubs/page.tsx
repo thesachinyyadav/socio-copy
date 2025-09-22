@@ -313,22 +313,16 @@ const CentresPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white">
-        <div className="container mx-auto px-4 py-12 md:py-16 max-w-7xl">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black mb-3">
-                Centres & Cells
-              </h1>
-              <p className="text-blue-100 text-lg max-w-2xl">
-                Explore all 30 specialized centres and cells at Christ University that enhance academic excellence, 
-                research, innovation, and student development through various domains and disciplines.
-              </p>
-            </div>
+    <div className="min-h-screen bg-white">
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="mb-12">
+          <div className="flex flex-row items-center justify-between">
+            <h1 className="text-3xl font-black text-[#154CB3] mb-2 mt-6">
+              Explore centres & cells
+            </h1>
             <Link
               href="/Discover"
-              className="flex items-center bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full mt-4 md:mt-0 transition-all"
+              className="flex items-center text-[#063168] hover:underline cursor-pointer text-xs sm:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -336,7 +330,7 @@ const CentresPage = () => {
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
-                className="w-4 h-4 mr-2"
+                className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2"
               >
                 <path
                   strokeLinecap="round"
@@ -347,39 +341,32 @@ const CentresPage = () => {
               Back to Discovery
             </Link>
           </div>
-          
-          <div className="bg-white p-4 rounded-2xl shadow-md flex flex-wrap gap-2">
+          <p className="text-gray-500 mb-6 text-sm sm:text-base">
+            Browse through all 30 specialized centres and cells at Christ University that enhance academic excellence, 
+            research, innovation, and student development.
+          </p>
+          <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
             {filterOptions.map((filter, index) => (
               <button
                 key={index}
                 onClick={() => handleFilterClick(filter.name)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer touch-manipulation ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer touch-manipulation ${
                   filter.active
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-blue-50 text-blue-800 hover:bg-blue-100"
+                    ? "bg-[#154CB3] text-white"
+                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
                 }`}
               >
                 {filter.name}
               </button>
             ))}
           </div>
-        </div>
-      </div>
-
-      <main>
-        <div className="container mx-auto px-4 py-8 max-w-7xl -mt-6">
-          <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-                {`${activeFilter === "All" ? "All Centres" : activeFilter + " Centres"}`}
-              </h2>
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                {filteredCentres.length} {filteredCentres.length === 1 ? 'Centre' : 'Centres'}
-              </span>
-            </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#063168] mb-4 sm:mb-6">
+              {`${activeFilter === "All" ? "All" : activeFilter} centres (${filteredCentres.length})`}
+            </h2>
 
             {filteredCentres.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
                 {filteredCentres.map((centre) => (
                   <CentreClubCard
                     key={centre.id}
@@ -393,20 +380,21 @@ const CentresPage = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="text-center py-8 sm:py-12">
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
-                  className="h-16 w-16 mx-auto text-gray-400 mb-4" 
+                  className="mx-auto h-12 w-12 text-gray-400" 
                   fill="none" 
                   viewBox="0 0 24 24" 
                   stroke="currentColor"
+                  strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 className="text-xl font-bold text-gray-700 mb-2">
+                <h3 className="mt-2 text-lg sm:text-xl font-bold text-gray-700 mb-2">
                   No centres found
                 </h3>
-                <p className="text-gray-500 max-w-md mx-auto">
+                <p className="text-gray-500 text-sm sm:text-base">
                   Try adjusting your filters to find more centres, or explore a different category.
                 </p>
               </div>
