@@ -17,7 +17,7 @@ export default function Footer() {
               <Image src={Logo} alt="SOCIO Logo" width={100} height={100} className="mb-4" />
             </Link>
             <p className="text-gray-600 mb-4">
-              Connecting campus communities through events, clubs, and activities.
+              Connecting campus through events, & activities.
             </p>
             <div className="flex items-center mb-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#154CB3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
