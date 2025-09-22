@@ -5,6 +5,7 @@ import { SectionHeader } from "./SectionHeader";
 interface Event {
   fest: string;
   id: number;
+  event_id: string; // Add this field for the event ID
   title: string;
   date?: string | null;
   organizing_dept: string;
@@ -43,6 +44,7 @@ export const EventsSection = ({
             tags={event.tags || []}
             image={event.image}
             baseUrl={baseUrl}
+            idForLink={event.event_id} // Add the event_id for link generation
           />
         ))}
       </div>

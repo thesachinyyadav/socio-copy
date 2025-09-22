@@ -31,13 +31,8 @@ export const EventCard = ({
 }: EventCardProps) => {
   const { userData, isLoading: authLoading } = useAuth();
 
-  const eventSlug =
-    idForLink ||
-    title
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+  const eventSlug = idForLink;
+  // No longer generating slugs from title; always use the actual event_id
   const eventPageUrl = `/${baseUrl}/${eventSlug}`;
   const participantsPageUrl = `/event/${eventSlug}/participants`;
 

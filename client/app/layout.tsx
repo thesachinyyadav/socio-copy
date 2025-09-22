@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { TermsConsentProvider } from "@/context/TermsConsentContext";
 import NavigationBar from "./_components/NavigationBar";
 
 import {
@@ -42,7 +43,7 @@ const getRandomEvents = (
 const transformToEventCardData = (event: FetchedEvent): EventForCard => {
   return {
     id: event.id,
-    event_id: event.event_id,
+    event_id: event.event_id, // Ensure this is always included
     title: event.title,
     fest: event.fest,
     date: event.event_date,
@@ -170,19 +171,21 @@ export default async function RootLayout({
         className="font-sans antialiased bg-[#FFFFFF] text-[#101010] font-[DM_Sans] overflow-x-hidden"
       >
         <AuthProvider>
-          <EventsProvider
-            initialAllEvents={allEvents}
-            initialCarouselEvents={carouselEvents}
-            initialTrendingEvents={trendingEvents}
-            initialUpcomingEvents={upcomingEvents}
-            initialIsLoading={isLoading}
-            initialError={error}
-          >
-            <div className="relative w-full overflow-hidden">
-              <NavigationBar />
-              {children}
-            </div>
-          </EventsProvider>
+          <TermsConsentProvider>
+            <EventsProvider
+              initialAllEvents={allEvents}
+              initialCarouselEvents={carouselEvents}
+              initialTrendingEvents={trendingEvents}
+              initialUpcomingEvents={upcomingEvents}
+              initialIsLoading={isLoading}
+              initialError={error}
+            >
+              <div className="relative w-full overflow-hidden">
+                <NavigationBar />
+                {children}
+              </div>
+            </EventsProvider>
+          </TermsConsentProvider>
         </AuthProvider>
       </body>
     </html>

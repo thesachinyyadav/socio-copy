@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { scrambleText } from './textAnimations';
 import './AnimatedText.css';
 import './animation-fix.css';
 
@@ -16,6 +15,9 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({ className = "" }) => {
   const charElements = useRef<HTMLSpanElement[]>([]);
 
   useEffect(() => {
+    console.log("AnimatedText component mounted");
+    
+    // Register GSAP plugins
     gsap.registerPlugin(ScrollTrigger);
     
     if (!textRef.current) return;
@@ -52,40 +54,8 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({ className = "" }) => {
       ease: "back.out(1.7)",
     });
 
-    // Let's completely switch to a simpler, more reliable CSS-based animation
-    // instead of relying on complex GSAP timelines that might not be repeating correctly
-    const applyClassBasedAnimations = () => {
-      if (!textRef.current) return;
-      
-      // Find all word groups
-      const wordGroups = textRef.current.querySelectorAll('.word-group');
-      
-      // Add animation classes with proper timing
-      wordGroups.forEach((group, index) => {
-        // Add continuous animation class
-        group.classList.add('animate-word');
-        
-        // Set animation delay based on index for sequential animation
-        (group as HTMLElement).style.animationDelay = `${index * 3}s`;
-      });
-      
-      // Also apply pulsing animation to separators
-      const separators = textRef.current.querySelectorAll('.char[data-separator="true"]');
-      separators.forEach(separator => {
-        separator.classList.add('pulse-animation');
-      });
-    };
-    
-    // Start the CSS-based animations after initial reveal
-    const startDelay = 1.5; // seconds to wait after initial animation
-    gsap.delayedCall(startDelay, applyClassBasedAnimations);
-
     // Cleanup function
     return () => {
-      charElements.current.forEach((char) => {
-        gsap.killTweensOf(char);
-      });
-      
       if (tl.scrollTrigger) {
         tl.scrollTrigger.kill();
       }
@@ -188,7 +158,7 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({ className = "" }) => {
       </div>
       
       <div className="container mx-auto text-center px-4 relative z-10">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 inline-block animated-heading" 
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 inline-block animated-heading shine" 
           id="animated-text"
           style={{ 
             backgroundImage: 'linear-gradient(45deg, #063168, #3D75BD, #FFCC00, #3D75BD, #063168)',

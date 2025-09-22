@@ -45,10 +45,34 @@ router.post("/", async (req, res) => {
     const existingUser = checkStmt.get(authClientUser.email, authClientUser.id);
 
     if (existingUser) {
-      // If user exists but doesn't have auth_uuid, update it
+      // If user exists, check if we need to update fields
+      const fieldsToUpdate = [];
+      const params = [];
+      
+      // Check if auth_uuid needs updating
       if (!existingUser.auth_uuid && authClientUser.id) {
-        const updateStmt = db.prepare("UPDATE users SET auth_uuid = ? WHERE email = ?");
-        updateStmt.run(authClientUser.id, authClientUser.email);
+        fieldsToUpdate.push("auth_uuid = ?");
+        params.push(authClientUser.id);
+      }
+      
+      // Check if register_number needs updating
+      if ((!existingUser.register_number || existingUser.register_number === 0) && 
+          authClientUser.register_number) {
+        fieldsToUpdate.push("register_number = ?");
+        params.push(authClientUser.register_number);
+      }
+      
+      // Check if course needs updating
+      if (!existingUser.course && authClientUser.course) {
+        fieldsToUpdate.push("course = ?");
+        params.push(authClientUser.course);
+      }
+      
+      // Update user if needed
+      if (fieldsToUpdate.length > 0) {
+        params.push(authClientUser.email); // Add email for WHERE clause
+        const updateStmt = db.prepare(`UPDATE users SET ${fieldsToUpdate.join(", ")} WHERE email = ?`);
+        updateStmt.run(...params);
         
         // Get updated user
         const getUpdatedStmt = db.prepare("SELECT * FROM users WHERE email = ?");
@@ -57,7 +81,7 @@ router.post("/", async (req, res) => {
         return res.status(200).json({
           user: updatedUser,
           isNew: false,
-          message: "User updated with auth UUID.",
+          message: "User information updated.",
         });
       }
       
@@ -70,14 +94,31 @@ router.post("/", async (req, res) => {
 
     // Create new user
     let name = authClientUser.name || authClientUser.user_metadata?.full_name || "";
-    let registerNumber = authClientUser.user_metadata?.register_number || "";
-    if (name) {
+    let registerNumber = authClientUser.register_number || authClientUser.user_metadata?.register_number || null;
+    let course = authClientUser.course || null;
+    
+    // If registration number wasn't found and we have a name with digits at the end
+    if (!registerNumber && name) {
       const nameParts = name.split(" ");
       if (nameParts.length > 1) {
         const lastPart = nameParts[nameParts.length - 1];
-        if (/^\d+$/.test(lastPart) && !registerNumber) {
-          registerNumber = lastPart;
+        if (/^\d+$/.test(lastPart)) {
+          registerNumber = parseInt(lastPart);
           name = nameParts.slice(0, -1).join(" ");
+        }
+      }
+    }
+    
+    // If no course was provided, try extracting from email
+    if (!course && authClientUser.email) {
+      const emailParts = authClientUser.email.split("@");
+      if (emailParts.length === 2) {
+        const domainParts = emailParts[1].split(".");
+        if (domainParts.length > 0) {
+          const possibleCourse = domainParts[0].toUpperCase();
+          if (possibleCourse && possibleCourse !== "CHRISTUNIVERSITY") {
+            course = possibleCourse;
+          }
         }
       }
     }
@@ -89,9 +130,16 @@ router.post("/", async (req, res) => {
       authClientUser.picture ||
       null;
 
+    console.log("Creating new user with data:", {
+      name,
+      email: authClientUser.email,
+      registerNumber,
+      course
+    });
+
     const insertStmt = db.prepare(`
-      INSERT INTO users (auth_uuid, email, name, avatar_url, is_organiser, course)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO users (auth_uuid, email, name, avatar_url, is_organiser, register_number, course)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertStmt.run(
@@ -100,7 +148,8 @@ router.post("/", async (req, res) => {
       name || "New User",
       avatarUrl,
       0, // SQLite uses 0/1 for boolean
-      null
+      registerNumber,
+      course
     );
 
     // Get the newly created user

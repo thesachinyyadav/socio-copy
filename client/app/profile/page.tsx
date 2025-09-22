@@ -87,72 +87,74 @@ const StudentProfile = () => {
         profilePicture: userData.avatar_url || "",
       }));
 
-      if (userData.register_number) {
-        const fetchRegisteredEvents = async () => {
-          setIsLoadingRegisteredEvents(true);
-          try {
-            const response = await fetch(
-              `http://localhost:8000/api/registrations/user/` +
-                userData.register_number +
-                `/events`
-            );
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data: { events: FetchedUserEvent[] } = await response.json();
-
-            const displayableEvents = data.events.map(
-              (event: FetchedUserEvent) => {
-                const eventDateObj = new Date(event.date);
-                const formattedDate = eventDateObj.toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                });
-
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const eventDay = new Date(eventDateObj);
-                eventDay.setHours(0, 0, 0, 0);
-
-                let eventStatus: "upcoming" | "completed";
-                if (eventDay < today) {
-                  eventStatus = "completed";
-                } else {
-                  eventStatus = "upcoming";
-                }
-
-                return {
-                  id: event.id,
-                  event_id: event.event_id || event.id, // fallback to id if event_id not available
-                  name: event.name,
-                  date: formattedDate,
-                  department: event.department,
-                  status: eventStatus,
-                };
-              }
-            );
-
-            setRegisteredEventsList(displayableEvents);
-            setStudent((prevState) => ({
-              ...prevState,
-              registeredEvents: displayableEvents.length,
-            }));
-          } catch (error) {
-            console.error("Failed to fetch registered events:", error);
+      // Fetch registered events if possible
+      const fetchRegisteredEvents = async () => {
+        setIsLoadingRegisteredEvents(true);
+        try {
+          // Check if we have a registration number
+          if (!userData.register_number) {
+            console.warn("No registration number available for this user.");
             setRegisteredEventsList([]);
             setStudent((prevState) => ({ ...prevState, registeredEvents: 0 }));
-          } finally {
             setIsLoadingRegisteredEvents(false);
+            return;
           }
-        };
 
-        fetchRegisteredEvents();
-      } else {
-        setIsLoadingRegisteredEvents(false);
-        setRegisteredEventsList([]);
-        setStudent((prevState) => ({ ...prevState, registeredEvents: 0 }));
-      }
+          const response = await fetch(
+            `http://localhost:8000/api/registrations/user/${userData.register_number}/events`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data: { events: FetchedUserEvent[] } = await response.json();
+
+          const displayableEvents = data.events.map(
+            (event: FetchedUserEvent) => {
+              const eventDateObj = new Date(event.date);
+              const formattedDate = eventDateObj.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              });
+
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const eventDay = new Date(eventDateObj);
+              eventDay.setHours(0, 0, 0, 0);
+
+              let eventStatus: "upcoming" | "completed";
+              if (eventDay < today) {
+                eventStatus = "completed";
+              } else {
+                eventStatus = "upcoming";
+              }
+
+              return {
+                id: event.id,
+                event_id: event.event_id || event.id, // fallback to id if event_id not available
+                name: event.name,
+                date: formattedDate,
+                department: event.department,
+                status: eventStatus,
+              };
+            }
+          );
+
+          setRegisteredEventsList(displayableEvents);
+          setStudent((prevState) => ({
+            ...prevState,
+            registeredEvents: displayableEvents.length,
+          }));
+        } catch (error) {
+          console.error("Failed to fetch registered events:", error);
+          setRegisteredEventsList([]);
+          setStudent((prevState) => ({ ...prevState, registeredEvents: 0 }));
+        } finally {
+          setIsLoadingRegisteredEvents(false);
+        }
+      };
+
+      fetchRegisteredEvents();
     }
   }, [userData]);
 

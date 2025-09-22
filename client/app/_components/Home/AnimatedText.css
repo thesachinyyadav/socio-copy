@@ -38,7 +38,9 @@
   display: inline-block;
   position: relative;
   transform-style: preserve-3d;
+  transition: transform 0.05s ease;
   will-change: transform, color, text-shadow;
+  overflow: hidden;
 }
 
 .char.space {
@@ -51,6 +53,49 @@
   display: inline-block;
   position: relative;
   margin: 0 0.2em;
+}
+
+/* Light sweep effect */
+.text-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.shine::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 80%;
+  height: 300%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  animation: shine 3s infinite;
+  z-index: 2;
+  pointer-events: none;
+  filter: blur(3px);
+}
+
+@keyframes shine {
+  0% { 
+    left: -150%; 
+    top: -100%;
+  }
+  100% { 
+    left: 250%; 
+    top: 0%;
+  }
 }
 
 .animate-word .char {

@@ -1,12 +1,25 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import gsap from "gsap";
+import TermsConsentModal from "../TermsConsentModal";
+import { useTermsConsent } from "@/context/TermsConsentContext";
 
 const CTA = () => {
   const ctaRef = useRef<HTMLDivElement>(null);
-  const signInWithGoogle = async () => {
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const { hasConsented, setHasConsented, checkConsentStatus } = useTermsConsent();
+
+  const signInWithGoogle = async (isSignUp = true) => {
+    // Only show terms consent for Sign Up (default behavior for CTA component)
+    if (isSignUp && !checkConsentStatus()) {
+      // If not consented and this is sign up, show the terms modal
+      setShowTermsModal(true);
+      return;
+    }
+    
+    // If already consented or not requiring consent, proceed with sign in
     const supabase = createClientComponentClient();
     try {
       await supabase.auth.signInWithOAuth({
@@ -18,6 +31,28 @@ const CTA = () => {
     } catch (error) {
       console.error("Google authentication error:", error);
     }
+  };
+  
+  const handleTermsAccept = () => {
+    setHasConsented(true);
+    setShowTermsModal(false);
+    // After accepting terms, trigger the sign in
+    const supabase = createClientComponentClient();
+    try {
+      supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+    } catch (error) {
+      console.error("Google authentication error:", error);
+    }
+  };
+  
+  const handleTermsDecline = () => {
+    setShowTermsModal(false);
+    // Optionally show a message or do something when terms are declined
   };
 
   useEffect(() => {
@@ -63,10 +98,17 @@ const CTA = () => {
   }, []);
 
   return (
-    <div
-      ref={ctaRef}
-      className="py-12 sm:py-16 md:py-24 w-full flex flex-col items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-8 bg-gradient-to-b from-[#063168] to-[#3D75BD]"
-    >
+    <>
+      {showTermsModal && (
+        <TermsConsentModal 
+          onAccept={handleTermsAccept}
+          onDecline={handleTermsDecline}
+        />
+      )}
+      <div
+        ref={ctaRef}
+        className="py-12 sm:py-16 md:py-24 w-full flex flex-col items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-8 bg-gradient-to-b from-[#063168] to-[#3D75BD]"
+      >
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#fff] text-center leading-tight px-4">
         Find what's happening. <br className="hidden md:flex" /> Claim your spot
         and experience more.
@@ -78,18 +120,19 @@ const CTA = () => {
       </p>
       <div className="mt-6 sm:mt-8 flex flex-row sm:flex-row gap-4 px-4">
         <button
-          onClick={signInWithGoogle}
+          onClick={() => signInWithGoogle(true)}
           className="cursor-pointer font-semibold px-4 py-1.5 sm:px-4 sm:py-2 border-2 border-[#fff] hover:bg-[#ffffff1a] transition-all ease-in-out text-xs sm:text-sm rounded-full text-white whitespace-nowrap"
         >
           Get started
         </button>
-        <a href="">
+        <a href="/app-download">
           <button className="cursor-pointer font-semibold px-4 py-1.5 sm:px-4 sm:py-2 border-2 border-[#FFCC00] hover:bg-[#ffcc00f0] transition-all ease-in-out text-xs sm:text-sm rounded-full text-[#1e1e1e] bg-[#ffcc00] whitespace-nowrap">
             Download the app
           </button>
         </a>
       </div>
     </div>
+    </>
   );
 };
 

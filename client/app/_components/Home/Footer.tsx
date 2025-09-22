@@ -79,9 +79,9 @@ export default function Footer() {
             <div>
               <h3 className="font-semibold text-lg mb-4 text-[#154CB3] border-b border-[#FFCC00] pb-2">Legal</h3>
               <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-600 hover:text-[#154CB3]">Terms of Service</Link></li>
-                <li><Link href="#" className="text-gray-600 hover:text-[#154CB3]">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-gray-600 hover:text-[#154CB3]">Cookie Policy</Link></li>
+                <li><Link href="/terms" className="text-gray-600 hover:text-[#154CB3]">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="text-gray-600 hover:text-[#154CB3]">Privacy Policy</Link></li>
+                <li><Link href="/cookies" className="text-gray-600 hover:text-[#154CB3]">Cookie Policy</Link></li>
               </ul>
             </div>
           </div>
@@ -92,7 +92,8 @@ export default function Footer() {
           <p className="text-sm text-gray-600 mb-2 sm:mb-0">© {currentYear} SOCIO. All rights reserved.</p>
           <div className="flex space-x-4">
             <Link href="/about" className="text-sm text-gray-600 hover:text-[#154CB3]">About</Link>
-            <Link href="#" className="text-sm text-gray-600 hover:text-[#154CB3]">Blog</Link>
+            <Link href="/terms" className="text-sm text-gray-600 hover:text-[#154CB3]">Terms</Link>
+            <Link href="/privacy" className="text-sm text-gray-600 hover:text-[#154CB3]">Privacy</Link>
             <Link href="/about#feedback" className="text-sm text-gray-600 hover:text-[#154CB3]">Contact</Link>
           </div>
         </div>

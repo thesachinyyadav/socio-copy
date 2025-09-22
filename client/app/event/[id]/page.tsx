@@ -76,6 +76,158 @@ export default function Page() {
       ref.current.scrollIntoView({ behavior: "smooth" });
     }
   };
+  
+  // Process event data into the format needed for the UI
+  const processEventData = (foundEvent: ContextFetchedEvent) => {
+    let processedRules: string[] | undefined = undefined;
+    if (
+      foundEvent.rules &&
+      Array.isArray(foundEvent.rules) &&
+      foundEvent.rules.length > 0
+    ) {
+      const firstRule = foundEvent.rules[0];
+      if (typeof firstRule === "string") {
+        const rulesArray = foundEvent.rules.filter(
+          (r): r is string => typeof r === "string" && r.trim() !== ""
+        );
+        if (rulesArray.length > 0) processedRules = rulesArray;
+      } else if (
+        typeof firstRule === "object" &&
+        firstRule !== null &&
+        "value" in firstRule &&
+        typeof firstRule.value === "string"
+      ) {
+        const rulesArray = (foundEvent.rules as { value: string }[])
+          .map((r) => r.value)
+          .filter(
+            (r_val): r_val is string =>
+              typeof r_val === "string" && r_val.trim() !== ""
+          );
+        if (rulesArray.length > 0) processedRules = rulesArray;
+      }
+    }
+
+    let processedSchedule:
+      | Array<{ time: string; activity: string }>
+      | undefined = undefined;
+    if (
+      foundEvent.schedule &&
+      Array.isArray(foundEvent.schedule) &&
+      foundEvent.schedule.length > 0
+    ) {
+      const validScheduleItems = foundEvent.schedule.filter(
+        (s): s is { time: string; activity: string } =>
+          typeof s === "object" &&
+          s !== null &&
+          typeof s.time === "string" &&
+          s.time.trim() !== "" &&
+          typeof s.activity === "string" &&
+          s.activity.trim() !== ""
+      );
+      if (validScheduleItems.length > 0) {
+        processedSchedule = validScheduleItems;
+      }
+    }
+
+    let processedPrizes: string[] | undefined = undefined;
+    if (
+      foundEvent.prizes &&
+      Array.isArray(foundEvent.prizes) &&
+      foundEvent.prizes.length > 0
+    ) {
+      const firstPrize = foundEvent.prizes[0];
+      if (typeof firstPrize === "string") {
+        const prizesArray = foundEvent.prizes.filter(
+          (p): p is string => typeof p === "string" && p.trim() !== ""
+        );
+        if (prizesArray.length > 0) processedPrizes = prizesArray;
+      } else if (
+        typeof firstPrize === "object" &&
+        firstPrize !== null &&
+        "value" in (firstPrize as { value?: unknown }) &&
+        typeof (firstPrize as { value?: unknown }).value === "string"
+      ) {
+        const prizesArray = (
+          foundEvent.prizes as unknown as Array<{ value: string }>
+        )
+          .map((p) => p.value)
+          .filter(
+            (p_val): p_val is string =>
+              typeof p_val === "string" && p_val.trim() !== ""
+          );
+        if (prizesArray.length > 0) processedPrizes = prizesArray;
+      }
+    }
+
+    const transformedOrganizers: Array<{
+      name: string;
+      email: string;
+      phone: string;
+    }> = [
+      {
+        name: foundEvent.organizer_email
+          ? "Event Coordination Team"
+          : "Coordinator Team",
+        email: foundEvent.organizer_email || "info@example.com",
+        phone:
+          foundEvent.organizer_phone !== undefined &&
+          foundEvent.organizer_phone !== null
+            ? String(foundEvent.organizer_phone)
+            : "N/A",
+      },
+    ];
+
+    const finalEventData: EventData = {
+      id: foundEvent.event_id,
+      title: foundEvent.title || "Untitled Event",
+      department: foundEvent.organizing_dept || "General",
+      tags: [
+        ...(foundEvent.fest && foundEvent.fest !== "none"
+          ? [foundEvent.fest]
+          : []),
+        ...(foundEvent.category ? [foundEvent.category] : []),
+      ].filter(
+        (tag): tag is string => tag != null && String(tag).trim() !== ""
+      ),
+      date: foundEvent.event_date
+        ? moment(foundEvent.event_date).format("MMM D, YYYY")
+        : "Date TBD",
+      endDate: foundEvent.end_date
+        ? moment(foundEvent.end_date).format("MMM D, YYYY")
+        : foundEvent.event_date
+        ? moment(foundEvent.event_date).format("MMM D, YYYY")
+        : "Date TBD",
+      location: foundEvent.venue || "Location TBD",
+      price:
+        foundEvent.registration_fee != null && foundEvent.registration_fee > 0
+          ? `₹${foundEvent.registration_fee}`
+          : "Free",
+      numTeammates: foundEvent.participants_per_team ?? 1,
+      daysLeft: (() => {
+        if (!foundEvent.registration_deadline) return 0;
+        const target = moment(foundEvent.registration_deadline);
+        const today = moment().startOf("day");
+        if (target.isBefore(today)) return 0;
+        return target.diff(today, "days");
+      })(),
+      description: foundEvent.description || "No description available.",
+      rules: processedRules,
+      schedule: processedSchedule,
+      prizes: processedPrizes,
+      image:
+        foundEvent.banner_url ||
+        foundEvent.event_image_url ||
+        "https://via.placeholder.com/1200x600?text=Event+Image",
+      pdf: foundEvent.pdf_url || undefined,
+      organizers:
+        transformedOrganizers.length > 0 ? transformedOrganizers : undefined,
+      whatsappLink: foundEvent.whatsapp_invite_link || undefined,
+      registrationDeadlineISO: foundEvent.registration_deadline,
+    };
+    setEventData(finalEventData);
+    setPageError(null);
+    setPageLoading(false);
+  };
 
   useEffect(() => {
     let currentEventIdString: string | undefined;
@@ -104,165 +256,51 @@ export default function Page() {
       return;
     }
 
-    const foundEvent = allEvents.find(
+    // Try to find the event by UUID format first
+    let foundEvent = allEvents.find(
       (event: ContextFetchedEvent) => event.event_id === currentEventIdString
     );
+    
+    // If not found, try to fetch directly from API
+    if (!foundEvent) {
+      console.log(`Event not found in context, fetching from API: ${currentEventIdString}`);
+      setPageLoading(true);
+      
+      // Make direct API call to fetch the event
+      fetch(`http://localhost:8000/api/events/${currentEventIdString}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Event with ID "${currentEventIdString}" not found.`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.event) {
+            // Process the event data and update state
+            processEventData(data.event);
+          } else {
+            throw new Error(`Event with ID "${currentEventIdString}" not found.`);
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching event:", error);
+          setPageError(error.message || `Event with ID "${currentEventIdString}" not found.`);
+          setEventData(null);
+          setPageLoading(false);
+        });
+      return;
+    }
 
     if (foundEvent) {
-      let processedRules: string[] | undefined = undefined;
-      if (
-        foundEvent.rules &&
-        Array.isArray(foundEvent.rules) &&
-        foundEvent.rules.length > 0
-      ) {
-        const firstRule = foundEvent.rules[0];
-        if (typeof firstRule === "string") {
-          const rulesArray = foundEvent.rules.filter(
-            (r): r is string => typeof r === "string" && r.trim() !== ""
-          );
-          if (rulesArray.length > 0) processedRules = rulesArray;
-        } else if (
-          typeof firstRule === "object" &&
-          firstRule !== null &&
-          "value" in firstRule &&
-          typeof firstRule.value === "string"
-        ) {
-          const rulesArray = (foundEvent.rules as { value: string }[])
-            .map((r) => r.value)
-            .filter(
-              (r_val): r_val is string =>
-                typeof r_val === "string" && r_val.trim() !== ""
-            );
-          if (rulesArray.length > 0) processedRules = rulesArray;
-        }
-      }
-
-      let processedSchedule:
-        | Array<{ time: string; activity: string }>
-        | undefined = undefined;
-      if (
-        foundEvent.schedule &&
-        Array.isArray(foundEvent.schedule) &&
-        foundEvent.schedule.length > 0
-      ) {
-        const validScheduleItems = foundEvent.schedule.filter(
-          (s): s is { time: string; activity: string } =>
-            typeof s === "object" &&
-            s !== null &&
-            typeof s.time === "string" &&
-            s.time.trim() !== "" &&
-            typeof s.activity === "string" &&
-            s.activity.trim() !== ""
-        );
-        if (validScheduleItems.length > 0) {
-          processedSchedule = validScheduleItems;
-        }
-      }
-
-      let processedPrizes: string[] | undefined = undefined;
-      if (
-        foundEvent.prizes &&
-        Array.isArray(foundEvent.prizes) &&
-        foundEvent.prizes.length > 0
-      ) {
-        const firstPrize = foundEvent.prizes[0];
-        if (typeof firstPrize === "string") {
-          const prizesArray = foundEvent.prizes.filter(
-            (p): p is string => typeof p === "string" && p.trim() !== ""
-          );
-          if (prizesArray.length > 0) processedPrizes = prizesArray;
-        } else if (
-          typeof firstPrize === "object" &&
-          firstPrize !== null &&
-          "value" in (firstPrize as { value?: unknown }) &&
-          typeof (firstPrize as { value?: unknown }).value === "string"
-        ) {
-          const prizesArray = (
-            foundEvent.prizes as unknown as Array<{ value: string }>
-          )
-            .map((p) => p.value)
-            .filter(
-              (p_val): p_val is string =>
-                typeof p_val === "string" && p_val.trim() !== ""
-            );
-          if (prizesArray.length > 0) processedPrizes = prizesArray;
-        }
-      }
-
-      const transformedOrganizers: Array<{
-        name: string;
-        email: string;
-        phone: string;
-      }> = [
-        {
-          name: foundEvent.organizer_email
-            ? "Event Coordination Team"
-            : "Coordinator Team",
-          email: foundEvent.organizer_email || "info@example.com",
-          phone:
-            foundEvent.organizer_phone !== undefined &&
-            foundEvent.organizer_phone !== null
-              ? String(foundEvent.organizer_phone)
-              : "N/A",
-        },
-      ];
-
-      const finalEventData: EventData = {
-        id: foundEvent.event_id,
-        title: foundEvent.title || "Untitled Event",
-        department: foundEvent.organizing_dept || "General",
-        tags: [
-          ...(foundEvent.fest && foundEvent.fest !== "none"
-            ? [foundEvent.fest]
-            : []),
-          ...(foundEvent.category ? [foundEvent.category] : []),
-        ].filter(
-          (tag): tag is string => tag != null && String(tag).trim() !== ""
-        ),
-        date: foundEvent.event_date
-          ? moment(foundEvent.event_date).format("MMM D, YYYY")
-          : "Date TBD",
-        endDate: foundEvent.end_date
-          ? moment(foundEvent.end_date).format("MMM D, YYYY")
-          : foundEvent.event_date
-          ? moment(foundEvent.event_date).format("MMM D, YYYY")
-          : "Date TBD",
-        location: foundEvent.venue || "Location TBD",
-        price:
-          foundEvent.registration_fee != null && foundEvent.registration_fee > 0
-            ? `₹${foundEvent.registration_fee}`
-            : "Free",
-        numTeammates: foundEvent.participants_per_team ?? 1,
-        daysLeft: (() => {
-          if (!foundEvent.registration_deadline) return 0;
-          const target = moment(foundEvent.registration_deadline);
-          const today = moment().startOf("day");
-          if (target.isBefore(today)) return 0;
-          return target.diff(today, "days");
-        })(),
-        description: foundEvent.description || "No description available.",
-        rules: processedRules,
-        schedule: processedSchedule,
-        prizes: processedPrizes,
-        image:
-          foundEvent.banner_url ||
-          foundEvent.event_image_url ||
-          "https://via.placeholder.com/1200x600?text=Event+Image",
-        pdf: foundEvent.pdf_url || undefined,
-        organizers:
-          transformedOrganizers.length > 0 ? transformedOrganizers : undefined,
-        whatsappLink: foundEvent.whatsapp_invite_link || undefined,
-        registrationDeadlineISO: foundEvent.registration_deadline,
-      };
-      setEventData(finalEventData);
-      setPageError(null);
+      // Process the found event data
+      processEventData(foundEvent);
     } else {
       if (currentEventIdString) {
         setPageError(`Event with ID "${currentEventIdString}" not found.`);
       }
       setEventData(null);
+      setPageLoading(false);
     }
-    setPageLoading(false);
   }, [eventIdSlug, allEvents, contextIsLoading, contextError]);
 
   useEffect(() => {

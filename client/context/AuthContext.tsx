@@ -111,16 +111,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user?.email || !isEmailAllowed(user.email)) return;
 
     try {
+      // Extract registration number and name from email/user metadata
+      let fullName = user.user_metadata?.full_name || user.user_metadata?.name || "";
+      let registerNumber = null;
+      let course = null;
+      
+      // Extract course from email domain
+      const emailParts = user.email.split("@");
+      if (emailParts.length === 2) {
+        const domainParts = emailParts[1].split(".");
+        if (domainParts.length > 0) {
+          // Look for course code in domain (like @bcah.christuniversity.in)
+          const possibleCourse = domainParts[0].toUpperCase();
+          if (possibleCourse && possibleCourse !== "CHRISTUNIVERSITY") {
+            course = possibleCourse;
+          }
+        }
+      }
+      
+      // Extract registration number from last name or full name
+      if (user.user_metadata?.last_name) {
+        const lastNameStr = user.user_metadata.last_name.trim();
+        if (/^\d+$/.test(lastNameStr)) {
+          registerNumber = parseInt(lastNameStr);
+        }
+      } else if (fullName) {
+        const nameParts = fullName.split(" ");
+        if (nameParts.length > 1) {
+          const lastPart = nameParts[nameParts.length - 1].trim();
+          if (/^\d+$/.test(lastPart)) {
+            registerNumber = parseInt(lastPart);
+            // Remove registration number from the full name
+            fullName = nameParts.slice(0, nameParts.length - 1).join(" ");
+          }
+        }
+      }
+      
       const payload = {
         id: user.id,
         email: user.email,
-        name:
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          user.email?.split("@")[0],
+        name: fullName || user.email?.split("@")[0],
         avatar_url: user.user_metadata?.avatar_url,
         is_organiser: user.email?.endsWith("@christuniversity.in"),
+        register_number: registerNumber,
+        course: course
       };
+
+      console.log("Creating/updating user with payload:", payload);
 
       const response = await fetch(`${API_URL}/api/users`, {
         method: "POST",

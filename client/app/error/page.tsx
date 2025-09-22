@@ -1,170 +1,340 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const ALLOWED_DOMAIN = "christuniversity.in";
 
-function CatchTheDotGame() {
+/**
+ * Minimal Ping-Pong (Keep-Up) mini game
+ * - NEW: Mouse alignment (follow the cursor anywhere on the page), with smooth easing.
+ * - Move with mouse, touch, or arrow keys. Keep the ball up.
+ */
+function PingPongMini() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [running, setRunning] = useState(false);
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(20);
+  const rafRef = useRef<number | null>(null);
 
-  const width = 340;
-  const height = 200;
-  const radius = 12;
+  const W = 340;
+  const H = 200;
+  const R = 8;
+  const PADDLE_H = 10;
 
   const stateRef = useRef({
-    x: Math.random() * (width - 2 * radius) + radius,
-    y: Math.random() * (height - 2 * radius) + radius,
-    vx: 1.6,
-    vy: 1.2,
+    x: W * 0.5,
+    y: H * 0.35,
+    vx: 2.0,
+    vy: 2.2,
+    paddleX: W * 0.5 - 45,
+    paddleW: 90,
+    // smooth target for mouse-alignment mode
+    targetPX: W * 0.5 - 45,
+    running: false,
+    score: 0,
+    best: 0,
   });
 
-  const reset = useCallback(() => {
-    setScore(0);
-    setTimeLeft(20);
-    stateRef.current = {
-      x: Math.random() * (width - 2 * radius) + radius,
-      y: Math.random() * (height - 2 * radius) + radius,
-      vx: 1.6,
-      vy: 1.2,
-    };
-  }, []);
+  const [ui, setUi] = useState({
+    running: false,
+    score: 0,
+    best: 0,
+    gameOver: false,
+  });
+
+  // Mouse alignment toggle (default ON)
+  const [alignToMouse, setAlignToMouse] = useState(true);
+  const alignRef = useRef(alignToMouse);
+  useEffect(() => {
+    alignRef.current = alignToMouse;
+  }, [alignToMouse]);
 
   useEffect(() => {
-    if (!running) return;
-    let raf = 0;
+    // Load best score
+    const stored = Number.parseInt(localStorage.getItem("pong_best") || "0", 10);
+    if (!Number.isNaN(stored)) {
+      stateRef.current.best = stored;
+      setUi((u) => ({ ...u, best: stored }));
+    }
 
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-
-    const draw = () => {
-      // Update physics
+    const onKey = (e: KeyboardEvent) => {
       const s = stateRef.current;
-      s.x += s.vx;
-      s.y += s.vy;
-      if (s.x < radius || s.x > width - radius) s.vx *= -1;
-      if (s.y < radius || s.y > height - radius) s.vy *= -1;
-
-      // Clear
-      ctx.clearRect(0, 0, width, height);
-
-      // Background
-      const g = ctx.createLinearGradient(0, 0, width, height);
-      g.addColorStop(0, "#eef3ff");
-      g.addColorStop(1, "#ffffff");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, width, height);
-
-      // Dot
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = "#154CB3";
-      ctx.shadowColor = "rgba(21, 76, 179, 0.35)";
-      ctx.shadowBlur = 10;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // HUD
-      ctx.fillStyle = "#111827";
-      ctx.font = "bold 12px ui-sans-serif, system-ui";
-      ctx.fillText(`Score: ${score}`, 10, 18);
-      ctx.fillText(`Time: ${timeLeft}s`, width - 70, 18);
-
-      if (running && timeLeft > 0) {
-        raf = requestAnimationFrame(draw);
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        toggleRun();
+      } else if (e.key === "ArrowLeft") {
+        s.paddleX = Math.max(0, s.paddleX - 18);
+        s.targetPX = s.paddleX;
+      } else if (e.key === "ArrowRight") {
+        s.paddleX = Math.min(W - s.paddleW, s.paddleX + 18);
+        s.targetPX = s.paddleX;
       }
     };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [running, score, timeLeft]);
-
+  // Global mouse alignment: follow cursor anywhere, mapped into canvas space
   useEffect(() => {
-    if (!running) return;
-    if (timeLeft <= 0) {
-      setRunning(false);
+    const move = (e: MouseEvent) => {
+      if (!alignRef.current) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const s = stateRef.current;
+      const clamped = Math.max(0, Math.min(W - s.paddleW, mx - s.paddleW / 2));
+      s.targetPX = clamped;
+    };
+    if (alignToMouse) {
+      window.addEventListener("mousemove", move, { passive: true });
+      return () => window.removeEventListener("mousemove", move);
+    }
+  }, [alignToMouse]);
+
+  const reset = () => {
+    const s = stateRef.current;
+    s.x = W * 0.5;
+    s.y = H * 0.35;
+    s.vx = Math.random() > 0.5 ? 2.0 : -2.0;
+    s.vy = 2.2;
+    s.paddleW = 90;
+    s.paddleX = W * 0.5 - s.paddleW / 2;
+    s.targetPX = s.paddleX;
+    s.score = 0;
+    s.running = false;
+    setUi({ running: false, score: 0, best: s.best, gameOver: false });
+  };
+
+  const start = () => {
+    const s = stateRef.current;
+    s.running = true;
+    setUi((u) => ({ ...u, running: true, gameOver: false }));
+    loop();
+  };
+
+  const toggleRun = () => {
+    const s = stateRef.current;
+    if (ui.gameOver) {
+      reset();
+      start();
       return;
     }
-    const t = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(t);
-  }, [running, timeLeft]);
-
-  const onClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!running) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    const { x, y } = stateRef.current;
-    const dist = Math.hypot(cx - x, cy - y);
-    if (dist <= radius + 3) {
-      // Hit! Increase score and speed, teleport dot
-      setScore((s) => s + 1);
-      const speedBoost = 0.1;
-      stateRef.current.vx += (stateRef.current.vx > 0 ? speedBoost : -speedBoost);
-      stateRef.current.vy += (stateRef.current.vy > 0 ? speedBoost : -speedBoost);
-      stateRef.current.x = Math.random() * (width - 2 * radius) + radius;
-      stateRef.current.y = Math.random() * (height - 2 * radius) + radius;
+    s.running = !s.running;
+    setUi((u) => ({ ...u, running: s.running }));
+    if (s.running) loop();
+    else if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
   };
 
+  const onCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Still support direct control when inside canvas
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const s = stateRef.current;
+    const clamped = Math.max(0, Math.min(W - s.paddleW, mx - s.paddleW / 2));
+    if (alignRef.current) {
+      s.targetPX = clamped;
+    } else {
+      s.paddleX = clamped;
+      s.targetPX = clamped;
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const t = e.touches[0];
+    const mx = t.clientX - rect.left;
+    const s = stateRef.current;
+    const clamped = Math.max(0, Math.min(W - s.paddleW, mx - s.paddleW / 2));
+    if (alignRef.current) {
+      s.targetPX = clamped;
+    } else {
+      s.paddleX = clamped;
+      s.targetPX = clamped;
+    }
+  };
+
+  const loop = () => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const s = stateRef.current;
+
+    // Smoothly align paddle to target if enabled
+    if (alignRef.current) {
+      const ease = 0.35; // smoothing factor
+      s.paddleX += (s.targetPX - s.paddleX) * ease;
+      // clamp
+      if (s.paddleX < 0) s.paddleX = 0;
+      if (s.paddleX > W - s.paddleW) s.paddleX = W - s.paddleW;
+    }
+
+    // Physics
+    s.x += s.vx;
+    s.y += s.vy;
+
+    // Walls
+    if (s.x < R) {
+      s.x = R;
+      s.vx = Math.abs(s.vx);
+    }
+    if (s.x > W - R) {
+      s.x = W - R;
+      s.vx = -Math.abs(s.vx);
+    }
+    if (s.y < R) {
+      s.y = R;
+      s.vy = Math.abs(s.vy);
+    }
+
+    // Paddle collision
+    const paddleY = H - PADDLE_H - 6;
+    if (
+      s.y + R >= paddleY &&
+      s.y + R <= paddleY + Math.abs(s.vy) + 2 &&
+      s.x >= s.paddleX &&
+      s.x <= s.paddleX + s.paddleW
+    ) {
+      s.y = paddleY - R;
+      s.vy = -Math.max(2.0, Math.abs(s.vy) * 1.04); // bounce upward, gentle speed-up
+
+      // Add a bit of horizontal change based on where it hit
+      const hitPos = (s.x - (s.paddleX + s.paddleW / 2)) / (s.paddleW / 2);
+      s.vx += hitPos * 0.4;
+
+      s.score += 1;
+      if (s.score % 4 === 0 && s.paddleW > 60) {
+        s.paddleW -= 6; // small difficulty curve, still forgiving
+        // keep target within bounds after width change
+        s.targetPX = Math.max(0, Math.min(W - s.paddleW, s.targetPX));
+      }
+    }
+
+    // Missed
+    if (s.y - R > H) {
+      s.running = false;
+      const best = Math.max(s.best, s.score);
+      s.best = best;
+      localStorage.setItem("pong_best", String(best));
+      setUi({ running: false, score: s.score, best, gameOver: true });
+    }
+
+    // Render
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, "#f8fbff");
+    g.addColorStop(1, "#ffffff");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top HUD
+    ctx.fillStyle = "#374151";
+    ctx.font = "bold 12px ui-sans-serif, system-ui";
+    ctx.fillText(`Score: ${s.score}`, 10, 18);
+    ctx.fillText(`Best: ${s.best}`, W - 70, 18);
+
+    // Paddle
+    ctx.fillStyle = "#154CB3";
+    ctx.fillRect(s.paddleX, paddleY, s.paddleW, PADDLE_H);
+    ctx.fillStyle = "#7898e6";
+    ctx.fillRect(s.paddleX, paddleY + PADDLE_H - 2, s.paddleW, 2);
+
+    // Ball
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, R, 0, Math.PI * 2);
+    ctx.fillStyle = "#0F2E7A";
+    ctx.shadowColor = "rgba(15,46,122,0.25)";
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (s.running) {
+      rafRef.current = requestAnimationFrame(loop);
+    } else {
+      // Overlays
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "center";
+      ctx.font = "bold 14px ui-sans-serif, system-ui";
+      ctx.fillText(
+        ui.gameOver ? `Nice try! Final: ${s.score}` : "Paused",
+        W / 2,
+        H / 2 - 6
+      );
+      ctx.font = "12px ui-sans-serif, system-ui";
+      ctx.fillStyle = "#4B5563";
+      ctx.fillText(
+        ui.gameOver ? "Press Start to play again" : "Press Start to resume",
+        W / 2,
+        H / 2 + 14
+      );
+      ctx.textAlign = "left";
+    }
+  };
+
+  useEffect(() => {
+    reset();
+    // initial static render background
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+    }
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="w-full">
-      <div className="mb-3 text-left">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-600">
-          Quick game: click the moving dot to score before the time runs out.
+          Keep the ball up. Mouse, touch, or arrow keys.
         </p>
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white/60 shadow-inner p-3">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm text-gray-700">
-            Score: <span className="font-semibold">{score}</span> · Time:{" "}
-            <span className="font-semibold">{timeLeft}s</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {!running ? (
-              <button
-                onClick={() => {
-                  reset();
-                  setRunning(true);
-                }}
-                className="px-3 py-1.5 rounded-full text-white bg-[#154CB3] hover:bg-[#154cb3df] text-sm border border-[#154CB3] transition"
-              >
-                {timeLeft <= 0 ? "Play Again" : "Start"}
-              </button>
-            ) : (
-              <button
-                onClick={() => setRunning(false)}
-                className="px-3 py-1.5 rounded-full text-[#154CB3] bg-white hover:bg-[#f6f8ff] text-sm border border-[#154CB3] transition"
-              >
-                Pause
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={width}
-            height={height}
-            onClick={onClick}
-            className="mx-auto block rounded-lg border border-gray-200 bg-white"
-          />
-          {!running && timeLeft <= 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-lg bg-white/90 px-4 py-3 border border-gray-200 shadow-sm text-center">
-                <p className="text-sm text-gray-700">
-                  Time's up! Final score: <span className="font-semibold">{score}</span>
-                </p>
-              </div>
-            </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1 text-xs text-gray-600 select-none">
+            <input
+              type="checkbox"
+              checked={alignToMouse}
+              onChange={(e) => setAlignToMouse(e.target.checked)}
+              className="h-4 w-4 accent-[#154CB3]"
+            />
+            Mouse align
+          </label>
+          {!ui.running ? (
+            <button
+              onClick={() => (ui.gameOver ? (reset(), start()) : start())}
+              className="px-3 py-1.5 rounded-full text-white bg-[#154CB3] hover:bg-[#154cb3df] text-sm transition"
+            >
+              {ui.gameOver ? "Play again" : ui.score > 0 ? "Resume" : "Start"}
+            </button>
+          ) : (
+            <button
+              onClick={toggleRun}
+              className="px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm transition"
+            >
+              Pause
+            </button>
           )}
         </div>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white shadow-inner p-3">
+        <canvas
+          ref={canvasRef}
+          width={W}
+          height={H}
+          onMouseMove={onCanvasMouseMove}
+          onTouchMove={onTouchMove}
+          className="mx-auto block rounded-lg border border-gray-200 bg-white select-none touch-none"
+        />
       </div>
     </div>
   );
@@ -172,174 +342,107 @@ function CatchTheDotGame() {
 
 export default function BeepPage() {
   const { signInWithGoogle, isLoading } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const errorReason = searchParams.get("error");
+
+  const heading = useMemo(() => {
+    switch (errorReason) {
+      case "invalid_domain":
+        return "Sign‑in Limited";
+      case "not_authorized":
+        return "Access Denied";
+      default:
+        return "We Hit a Snag";
+    }
+  }, [errorReason]);
+
+  const primary = useMemo(() => {
+    switch (errorReason) {
+      case "invalid_domain":
+        return `Please sign in with your official ${ALLOWED_DOMAIN} email.`;
+      case "not_authorized":
+        return "You don’t have permission to access the management dashboard.";
+      default:
+        return "We couldn’t complete sign‑in right now.";
+    }
+  }, [errorReason]);
+
+  const empathy = useMemo(() => {
+    switch (errorReason) {
+      case "invalid_domain":
+        return "It’s not you — it’s us. Sorry for the mix‑up.";
+      case "not_authorized":
+        return "It’s not your problem — it’s ours. Sorry for the inconvenience.";
+      default:
+        return "It’s on us, not you. Sorry for the error — we’re fixing it.";
+    }
+  }, [errorReason]);
+
+  const helper = useMemo(() => {
+    switch (errorReason) {
+      case "invalid_domain":
+        return "Use your Christ University email to continue.";
+      case "not_authorized":
+        return "If this seems wrong, please contact the platform administrator.";
+      default:
+        return "You can try again now, or take a quick break below.";
+    }
+  }, [errorReason]);
+
+  const showTryAgain = errorReason !== "not_authorized";
 
   const handleLoginAgain = async () => {
     await signInWithGoogle();
   };
 
-  const heading = useMemo(() => {
-    if (errorReason === "invalid_domain") return "Access Limited to University Emails";
-    if (errorReason === "not_authorized") return "Access Denied";
-    return "Something Went Wrong";
-  }, [errorReason]);
-
-  const getErrorMessage = () => {
-    if (errorReason === "invalid_domain") {
-      return `It looks like you tried to sign in with an email address that isn't from Christ University.`;
-    } else if (errorReason === "not_authorized") {
-      return `You do not have the necessary permissions to access the management dashboard.`;
-    }
-    return "An authentication error occurred.";
-  };
-
-  const getAdditionalInfo = () => {
-    if (errorReason === "invalid_domain") {
-      return (
-        <>
-          <p className="text-gray-600 mb-3 text-sm">
-            It’s not you — it’s us. Sorry about the mix-up!
-          </p>
-          <p className="text-gray-600 mb-6 text-md">
-            Access to this platform is exclusively for students and faculty with
-            a valid <strong className="text-[#154CB3]">{ALLOWED_DOMAIN}</strong>{" "}
-            email address.
-          </p>
-          <p className="text-gray-600 mb-6 text-sm">
-            Please ensure you are using your official university email.
-          </p>
-        </>
-      );
-    } else if (errorReason === "not_authorized") {
-      return (
-        <>
-          <p className="text-gray-600 mb-3 text-sm">
-            It’s not you — it’s us. Sorry about the inconvenience.
-          </p>
-          <p className="text-gray-600 mb-6 text-md">
-            Only users with organiser privileges can access the management
-            dashboard.
-          </p>
-          <p className="text-gray-600 mb-6 text-sm">
-            If you believe this is an error, please contact the platform
-            administrator.
-          </p>
-        </>
-      );
-    }
-    return (
-      <>
-        <p className="text-gray-600 mb-3 text-sm">
-          It’s not you — it’s us. Sorry for the error.
-        </p>
-        <p className="text-gray-600 mb-6 text-sm">
-          A temporary issue prevented us from completing your request. You can try again or enjoy a quick mini‑game while we sort this out.
-        </p>
-      </>
-    );
-  };
-
-  const showTryAgain =
-    errorReason === "invalid_domain" ||
-    (!errorReason || errorReason === "fetch_error" || errorReason === "network");
-
-  const [showGame, setShowGame] = useState(
-    !errorReason || errorReason === "fetch_error" || errorReason === "network"
-  );
-
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-gradient-to-b from-[#eef3ff] to-white">
-      {/* Decorative blobs */}
-      <div className="pointer-events-none absolute -top-12 -left-12 h-64 w-64 rounded-full bg-[#c5d6ff] opacity-40 blur-3xl" />
-      <div className="pointer-events-none absolute top-24 -right-16 h-64 w-64 rounded-full bg-[#ffd2d2] opacity-40 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-10 right-10 h-48 w-48 rounded-full bg-[#d9ffe2] opacity-40 blur-3xl" />
-
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center p-4">
-        <div className="w-full max-w-xl rounded-2xl bg-white/80 backdrop-blur-md p-8 text-center border border-gray-200 shadow-xl">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FEE2E2] ring-1 ring-red-200">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-8 w-8 text-[#DC2626]"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 0 0 0-2 1 1 0 0 0 0 2Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#0F2E7A] mb-2">
-            {heading}
-          </h1>
-
-          <p className="text-gray-700 mb-2 text-md">{getErrorMessage()}</p>
-          {getAdditionalInfo()}
-
-          <div className="flex flex-col sm:flex-row gap-3 mt-2">
-            {showTryAgain && (
-              <button
-                onClick={handleLoginAgain}
-                disabled={isLoading}
-                className="flex-1 cursor-pointer font-semibold px-6 py-3 border-2 border-[#154CB3] hover:border-[#154cb3df] hover:bg-[#154cb3df] transition-all duration-200 ease-in-out text-md rounded-full text-white bg-[#154CB3] disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Processing..." : "Try Again"}
-              </button>
-            )}
-
-            <a href={"/Discover"} className="flex-1">
-              <button className="w-full cursor-pointer font-semibold px-6 py-3 border-2 border-transparent hover:bg-[#f3f3f3] transition-all duration-200 ease-in-out text-md rounded-full text-[#154CB3]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="inline h-5 w-5 mr-2 align-text-bottom"
-                >
-                  <g clipPath="url(#a)">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.25-7.25a.75.75 0 0 0 0-1.5H8.66l2.1-1.95a.75.75 0 1 0-1.02-1.1l-3.5 3.25a.75.75 0 0 0 0 1.1l3.5 3.25a.75.75 0 0 0 1.02-1.1l-2.1-1.95h4.59Z"
-                      clipRule="evenodd"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="a">
-                      <path d="M0 0h20v20H0z" />
-                    </clipPath>
-                  </defs>
-                </svg>
-                Go to Homepage
-              </button>
-            </a>
-          </div>
-
-          {/* Fun section */}
-          <div className="mt-8 text-left">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-[#0F2E7A]">Need a breather?</h2>
-              <button
-                onClick={() => setShowGame((s) => !s)}
-                className="text-sm rounded-full px-3 py-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
-              >
-                {showGame ? "Hide mini‑game" : "Play a mini‑game"}
-              </button>
-            </div>
-            {showGame && <CatchTheDotGame />}
-            {!showGame && (
-              <p className="text-sm text-gray-500">
-                It’s not your problem — it’s ours. We’re on it. In the meantime, feel free to explore the homepage.
-              </p>
-            )}
-          </div>
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 bg-gradient-to-b from-[#F7FAFF] to-white">
+      <div className="w-full max-w-xl rounded-2xl bg-white p-8 border border-gray-200 shadow-lg">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#FEE2E2] ring-1 ring-red-200">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-7 w-7 text-[#DC2626]"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 0 0 0-2 1 1 0 0 0 0 2Z"
+              clipRule="evenodd"
+            />
+          </svg>
         </div>
 
-        {/* Footer reassurance */}
+        <h1 className="text-2xl font-bold text-[#0F2E7A] mb-1">{heading}</h1>
+        <p className="text-gray-800">{primary}</p>
+        <p className="text-gray-600 text-sm">{empathy}</p>
+        <p className="text-gray-500 text-sm mb-6">{helper}</p>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+          {showTryAgain && (
+            <button
+              onClick={handleLoginAgain}
+              disabled={isLoading}
+              className="flex-1 cursor-pointer font-semibold px-6 py-3 border-2 border-[#154CB3] text-[#154CB3] hover:bg-[#154CB3] hover:text-white transition-colors rounded-full disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Processing..." : "Try Again"}
+            </button>
+          )}
+          <a href="/Discover" className="flex-1">
+            <button className="w-full cursor-pointer font-semibold px-6 py-3 border-2 border-transparent hover:bg-[#f3f3f3] transition-colors rounded-full text-[#154CB3]">
+              Go to Homepage
+            </button>
+          </a>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-[#0F2E7A]">Quick break</h2>
+          <PingPongMini />
+        </div>
+
         <p className="mt-6 text-xs text-gray-500 text-center">
-          We log errors automatically to help prevent this from happening again. Thanks for your patience!
+          We’re already on it and logging details to prevent repeats. Thanks for your patience.
         </p>
       </div>
     </div>

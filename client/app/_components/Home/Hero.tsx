@@ -7,14 +7,26 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { TypeAnimation } from "react-type-animation";
 import FunkyButton from "./FunkyButton";
+import TermsConsentModal from "../TermsConsentModal";
+import { useTermsConsent } from "@/context/TermsConsentContext";
 
 const Hero = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const { session, isLoading } = useAuth();
   const router = useRouter();
   const [startTyping, setStartTyping] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const { hasConsented, setHasConsented, checkConsentStatus } = useTermsConsent();
 
-  const handleSignInWithGoogle = async () => {
+  const handleSignInWithGoogle = async (isSignUp = true) => {
+    // Only show terms consent for Sign Up (default behavior for Hero component)
+    if (isSignUp && !checkConsentStatus()) {
+      // If not consented and this is sign up, show the terms modal
+      setShowTermsModal(true);
+      return;
+    }
+    
+    // If already consented or not requiring consent, proceed with sign in
     const supabase = createClientComponentClient();
     try {
       await supabase.auth.signInWithOAuth({
@@ -30,10 +42,34 @@ const Hero = () => {
 
   const handleExploreClick = () => {
     if (!session && !isLoading) {
-      handleSignInWithGoogle();
+      // For Explore button, we consider it more like a login than signup
+      // so we don't require terms consent
+      handleSignInWithGoogle(false);
     } else if (session && !isLoading) {
       router.push("/Discover");
     }
+  };
+  
+  const handleTermsAccept = () => {
+    setHasConsented(true);
+    setShowTermsModal(false);
+    // After accepting terms, trigger the sign in
+    const supabase = createClientComponentClient();
+    try {
+      supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+    } catch (error) {
+      console.error("Google authentication error:", error);
+    }
+  };
+  
+  const handleTermsDecline = () => {
+    setShowTermsModal(false);
+    // Optionally show a message or do something when terms are declined
   };
 
   useEffect(() => {
@@ -79,10 +115,17 @@ const Hero = () => {
   const buttonsDisabled = isLoading;
 
   return (
-    <div
-      ref={heroRef}
-      className="flex flex-col sm:flex-row justify-between items-center w-full px-4 sm:px-8 md:px-16 lg:px-36 py-12 sm:py-16 md:py-24"
-    >
+    <>
+      {showTermsModal && (
+        <TermsConsentModal 
+          onAccept={handleTermsAccept}
+          onDecline={handleTermsDecline}
+        />
+      )}
+      <div
+        ref={heroRef}
+        className="flex flex-col sm:flex-row justify-between items-center w-full px-4 sm:px-8 md:px-16 lg:px-36 py-12 sm:py-16 md:py-24"
+      >
       <div className="w-full sm:w-1/2 mb-8 sm:mb-0">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight" style={{ 
@@ -131,7 +174,7 @@ const Hero = () => {
         <div className="flex mt-6 sm:mt-8 gap-4 sm:gap-5 items-center select-none flex-row">
           <FunkyButton 
             text="Get Started" 
-            onClick={handleSignInWithGoogle}
+            onClick={() => handleSignInWithGoogle(true)}
           />
           <button
             onClick={handleExploreClick}
@@ -165,6 +208,7 @@ const Hero = () => {
         <div className="absolute bottom-1/4 left-1/4 w-8 h-8 rounded-full bg-blue-300 opacity-20 animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}></div>
       </div>
     </div>
+    </>
   );
 };
 
