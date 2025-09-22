@@ -354,77 +354,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Journey Timeline Section */}
-      <section className="py-12 md:py-16 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <h2 className="text-2xl md:text-3xl font-black text-[#154CB3] mb-6 text-center">
-            Our Journey
-          </h2>
-          <p className="text-gray-700 text-base md:text-lg mb-12 text-center max-w-3xl mx-auto">
-            From a simple idea to a platform serving thousands of students across colleges.
-          </p>
-
-          <div className="relative max-w-4xl mx-auto">
-            {/* Vertical Line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-[#154CB3] z-0"></div>
-            
-            {/* Timeline Items */}
-            <div className="relative z-10">
-              {/* Item 1 */}
-              <div className="flex flex-col md:flex-row items-center mb-12">
-                <div className="md:w-1/2 md:pr-8 mb-4 md:mb-0 md:text-right">
-                  <h3 className="text-xl font-bold text-[#154CB3]">The Idea</h3>
-                  <p className="text-gray-600 text-sm mt-1">December 2023</p>
-                  <p className="mt-2 text-gray-700">Meeth pitched the concept of SOCIO during a college hackathon, winning first place.</p>
-                </div>
-                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
-                  <span className="text-white font-bold">1</span>
-                </div>
-                <div className="md:w-1/2 md:pl-8 md:text-left"></div>
-              </div>
-              
-              {/* Item 2 */}
-              <div className="flex flex-col md:flex-row items-center mb-12">
-                <div className="md:w-1/2 md:pr-8 md:text-right"></div>
-                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
-                  <span className="text-white font-bold">2</span>
-                </div>
-                <div className="md:w-1/2 md:pl-8 mb-4 md:mb-0 md:text-left">
-                  <h3 className="text-xl font-bold text-[#154CB3]">Team Formation</h3>
-                  <p className="text-gray-600 text-sm mt-1">January 2024</p>
-                  <p className="mt-2 text-gray-700">Surya and Sachin joined the team, bringing their expertise in design and development.</p>
-                </div>
-              </div>
-              
-              {/* Item 3 */}
-              <div className="flex flex-col md:flex-row items-center mb-12">
-                <div className="md:w-1/2 md:pr-8 mb-4 md:mb-0 md:text-right">
-                  <h3 className="text-xl font-bold text-[#154CB3]">Beta Launch</h3>
-                  <p className="text-gray-600 text-sm mt-1">March 2024</p>
-                  <p className="mt-2 text-gray-700">First version of SOCIO deployed at our own college with 500 initial users.</p>
-                </div>
-                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
-                  <span className="text-white font-bold">3</span>
-                </div>
-                <div className="md:w-1/2 md:pl-8 md:text-left"></div>
-              </div>
-              
-              {/* Item 4 */}
-              <div className="flex flex-col md:flex-row items-center">
-                <div className="md:w-1/2 md:pr-8 md:text-right"></div>
-                <div className="rounded-full w-10 h-10 bg-[#154CB3] border-4 border-white flex items-center justify-center mx-4 z-10 shadow-md">
-                  <span className="text-white font-bold">4</span>
-                </div>
-                <div className="md:w-1/2 md:pl-8 mb-4 md:mb-0 md:text-left">
-                  <h3 className="text-xl font-bold text-[#154CB3]">Multi-campus Expansion</h3>
-                  <p className="text-gray-600 text-sm mt-1">September 2025</p>
-                  <p className="mt-2 text-gray-700">Now serving 20+ colleges and over 5,000 students across the region.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+     
 
       {/* Testimonials Section */}
       <section className="py-12 md:py-16 bg-white">
@@ -448,8 +378,8 @@ const AboutPage = () => {
                   A
                 </div>
                 <div className="ml-3">
-                  <p className="font-bold text-gray-800">Anjali Mehta</p>
-                  <p className="text-sm text-gray-600">Club President, Tech Club</p>
+                  <p className="font-bold text-gray-800">Toyesa Jaiswal </p>
+                  <p className="text-sm text-gray-600">Club Member, COGNITO , Department of Professional Studies</p>
                 </div>
               </div>
             </div>
@@ -465,7 +395,7 @@ const AboutPage = () => {
                   R
                 </div>
                 <div className="ml-3">
-                  <p className="font-bold text-gray-800">Dr. Rahul Sharma</p>
+                  <p className="font-bold text-gray-800">Dr. Smitha Vinod </p>
                   <p className="text-sm text-gray-600">Associate Professor, Computer Science</p>
                 </div>
               </div>
@@ -482,8 +412,8 @@ const AboutPage = () => {
                   P
                 </div>
                 <div className="ml-3">
-                  <p className="font-bold text-gray-800">Priya Desai</p>
-                  <p className="text-sm text-gray-600">2nd Year Student, Engineering</p>
+                  <p className="font-bold text-gray-800">Arjun Ramesh </p>
+                  <p className="text-sm text-gray-600">2nd Year Student, BCA</p>
                 </div>
               </div>
             </div>
