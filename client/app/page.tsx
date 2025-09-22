@@ -7,6 +7,7 @@ import UpcomingEvents from "./_components/Home/UpcomingEvents";
 import CTA from "./_components/Home/CTA";
 import FAQPage from "./_components/Home/FAQs";
 import Footer from "./_components/Home/Footer";
+import AnimatedText from "./_components/Home/AnimatedText";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 
@@ -31,25 +32,29 @@ export default function Home() {
   }, []);
 
   return (
-    <>
-      <div className="section">
+    <main className="w-full">
+      <div className="section relative z-10">
         <Hero />
+        <div className="absolute bottom-0 left-0 w-full">
+          <img src="/images/hero-wave.svg" className="w-full" alt="" />
+        </div>
+        <AnimatedText />
       </div>
-      <div className="section">
+      <div className="section relative z-10">
         <Features />
       </div>
-      <div className="section">
+      <div className="section relative z-10">
         <UpcomingEvents />
       </div>
-      <div className="section">
+      <div className="section relative z-10">
         <CTA />
       </div>
-      <div className="section">
+      <div className="section relative z-10">
         <FAQPage />
       </div>
-      <div className="section">
+      <div className="section relative z-10">
         <Footer />
       </div>
-    </>
+    </main>
   );
 }
