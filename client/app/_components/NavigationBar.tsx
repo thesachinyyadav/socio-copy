@@ -21,30 +21,21 @@ const navigationLinks = [
     ]
   },
   {
+    name: "Discover",
+    href: "/Discover",
+    dropdown: [
+      { name: "All Events", href: "/events" },
+      { name: "All Fests", href: "/fests" },
+      { name: "Centres & Cells", href: "/clubs" }
+    ]
+  },
+  {
     name: "About",
     href: "/about",
     dropdown: [
       { name: "Our Story", href: "/about/story" },
       { name: "Team", href: "/about/team" },
       { name: "Mission", href: "/about/mission" }
-    ]
-  },
-  {
-    name: "Services",
-    href: "/services",
-    dropdown: [
-      { name: "Event Management", href: "/services/events" },
-      { name: "Registration System", href: "/services/registration" },
-      { name: "Analytics", href: "/services/analytics" }
-    ]
-  },
-  {
-    name: "Events",
-    href: "/Discover",
-    dropdown: [
-      { name: "Upcoming Events", href: "/Discover?filter=upcoming" },
-      { name: "Past Events", href: "/Discover?filter=past" },
-      { name: "My Events", href: "/my-events" }
     ]
   },
   {

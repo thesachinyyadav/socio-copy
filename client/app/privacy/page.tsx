@@ -205,7 +205,7 @@ export default function PrivacyPolicy() {
                 <li>Request a copy of your data in a portable format</li>
               </ul>
               <p className="text-gray-700">
-                To exercise any of these rights, please contact us at <span className="text-[#063168] font-medium">privacy@socio.christuniversity.in</span>.
+                To exercise any of these rights, please contact us at <span className="text-[#063168] font-medium">thesocio.blr@gmail.com</span>.
               </p>
             </div>
 
@@ -268,7 +268,8 @@ export default function PrivacyPolicy() {
               <div className="bg-blue-50 p-4 rounded-lg text-gray-700">
                 <p className="font-medium">SOCIO - Christ University Events Platform</p>
                 <p>Privacy Team</p>
-                <p>Email: privacy@socio.christuniversity.in</p>
+                <p>Email: thesocio.blr@gmail.com</p>
+                <p>Phone: +91 88613 30665</p>
                 <p>Address: Christ University, Hosur Road, Bengaluru - 560029</p>
               </div>
             </div>

@@ -73,7 +73,7 @@ export default function TermsOfService() {
               </div>
               <p>
                 Socio is intended for use by current students, faculty, and staff of the university. To access 
-                and use Socio, you must have a valid university email address ending in "christuniversity.in" or as 
+                and use Socio, you must have a valid university email address ending in "christuniversity.in" or contact us at thesocio.blr@gmail.com for 
                 otherwise approved by Socio administrators. By accessing or using Socio, you represent and warrant 
                 that you are a current student, faculty, or staff member of the university.
               </p>
