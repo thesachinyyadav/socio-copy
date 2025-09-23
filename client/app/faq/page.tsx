@@ -4,9 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Footer from "../_components/Home/Footer";
 
-const FAQPage = () => {
+export default function FAQPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  export default function FAQPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("general");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -29,8 +28,6 @@ const FAQPage = () => {
         );
     }
   };
-
-  const categories = [
 
   const faqCategories = [
     { id: "general", name: "General", icon: "❓" },
@@ -411,6 +408,4 @@ const FAQPage = () => {
       <Footer />
     </div>
   );
-};
-
-export default FAQPage;
+}

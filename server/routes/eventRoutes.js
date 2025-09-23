@@ -1,5 +1,5 @@
 import express from "express";
-import db from "../config/database.js";
+import { queryAll, queryOne, executeQuery } from "../config/database.js";
 import { multerUpload } from "../utils/multerConfig.js";
 import { uploadFileToSupabase, getPathFromStorageUrl, deleteFileFromLocal } from "../utils/fileUtils.js";
 import { parseOptionalFloat, parseOptionalInt, parseJsonField } from "../utils/parsers.js";
@@ -10,16 +10,15 @@ const router = express.Router();
 // GET all events
 router.get("/", async (req, res) => {
   try {
-    const stmt = db.prepare("SELECT * FROM events ORDER BY created_at DESC");
-    const events = stmt.all();
+    const events = await queryAll("SELECT * FROM events ORDER BY created_at DESC");
 
     // Parse JSON fields for each event
     const processedEvents = events.map(event => ({
       ...event,
-      department_access: event.department_access ? JSON.parse(event.department_access) : [],
-      rules: event.rules ? JSON.parse(event.rules) : [],
-      schedule: event.schedule ? JSON.parse(event.schedule) : [],
-      prizes: event.prizes ? JSON.parse(event.prizes) : []
+      department_access: event.department_access || [],
+      rules: event.rules || [],
+      schedule: event.schedule || [],
+      prizes: event.prizes || []
     }));
 
     return res.status(200).json({ events: processedEvents });
@@ -40,8 +39,7 @@ router.get("/:eventId", async (req, res) => {
       });
     }
 
-    const stmt = db.prepare("SELECT * FROM events WHERE event_id = ?");
-    const event = stmt.get(eventId);
+    const event = await queryOne("SELECT * FROM events WHERE event_id = ?", [eventId]);
 
     if (!event) {
       return res.status(404).json({ error: `Event with ID '${eventId}' not found.` });

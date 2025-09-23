@@ -1,12 +1,11 @@
 import express from "express";
-import db from "../config/database.js";
+import { queryAll, queryOne, executeQuery } from "../config/database.js";
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const stmt = db.prepare("SELECT * FROM users");
-    const users = stmt.all();
+    const users = await queryAll("SELECT * FROM users");
     return res.status(200).json({ users });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -17,8 +16,7 @@ router.get("/", async (req, res) => {
 router.get("/:email", async (req, res) => {
   try {
     const { email } = req.params;
-    const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
-    const user = stmt.get(email);
+    const user = await queryOne("SELECT * FROM users WHERE email = ?", [email]);
     
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -41,13 +39,14 @@ router.post("/", async (req, res) => {
     }
 
     // Check if user already exists by email or auth_uuid
-    const checkStmt = db.prepare("SELECT * FROM users WHERE email = ? OR (auth_uuid IS NOT NULL AND auth_uuid = ?)");
-    const existingUser = checkStmt.get(authClientUser.email, authClientUser.id);
+    const existingUser = await queryOne(
+      "SELECT * FROM users WHERE email = ? OR (auth_uuid IS NOT NULL AND auth_uuid = ?)", 
+      [authClientUser.email, authClientUser.id]
+    );
 
     if (existingUser) {
       // If user exists, check if we need to update fields
       const fieldsToUpdate = [];
-      const params = [];
       
       // Check if auth_uuid needs updating
       if (!existingUser.auth_uuid && authClientUser.id) {
@@ -71,12 +70,10 @@ router.post("/", async (req, res) => {
       // Update user if needed
       if (fieldsToUpdate.length > 0) {
         params.push(authClientUser.email); // Add email for WHERE clause
-        const updateStmt = db.prepare(`UPDATE users SET ${fieldsToUpdate.join(", ")} WHERE email = ?`);
-        updateStmt.run(...params);
+        await executeQuery(`UPDATE users SET ${fieldsToUpdate.join(", ")} WHERE email = ?`, params);
         
         // Get updated user
-        const getUpdatedStmt = db.prepare("SELECT * FROM users WHERE email = ?");
-        const updatedUser = getUpdatedStmt.get(authClientUser.email);
+        const updatedUser = await queryOne("SELECT * FROM users WHERE email = ?", [authClientUser.email]);
         
         return res.status(200).json({
           user: updatedUser,
@@ -137,24 +134,21 @@ router.post("/", async (req, res) => {
       course
     });
 
-    const insertStmt = db.prepare(`
+    await executeQuery(`
       INSERT INTO users (auth_uuid, email, name, avatar_url, is_organiser, register_number, course)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
+    `, [
       authClientUser.id || null,
       authClientUser.email,
       name || "New User",
       avatarUrl,
-      0, // SQLite uses 0/1 for boolean
+      false, // MySQL uses boolean
       registerNumber,
       course
-    );
+    ]);
 
     // Get the newly created user
-    const getStmt = db.prepare("SELECT * FROM users WHERE email = ?");
-    const newUser = getStmt.get(authClientUser.email);
+    const newUser = await queryOne("SELECT * FROM users WHERE email = ?", [authClientUser.email]);
 
     return res.status(201).json({
       user: newUser,

@@ -179,7 +179,7 @@ const AboutPage = () => {
                 inclusive student experience."
               </p>
               <p className="mt-2 text-sm md:text-base font-medium text-[#154CB3]">
-                — Sachin Yadav
+                — Sachin Yadav, Co-Founder & Lead Developer
               </p>
             </div>
           </div>
@@ -228,7 +228,7 @@ const AboutPage = () => {
           <div className="relative w-full max-w-2xl mx-auto overflow-hidden rounded-lg shadow-lg mb-6">
             <Image
               src="/sachinsuryameeth.jpg"
-              alt="Sachin, Surya, and Meeth - Founders of SOCIO"
+              alt="Sachin Yadav, Surya Vamshi, and Meeth Shah - Founders of SOCIO"
               width={800}
               height={400}
               priority
@@ -236,15 +236,15 @@ const AboutPage = () => {
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#154CB3]/80 to-transparent p-4">
               <p className="text-white text-center font-medium">
-          Our founders: Sachin, Surya, and Meeth
+          Our founders: Sachin Yadav, Surya Vamshi, and Meeth Shah
               </p>
             </div>
           </div>
           <div className="w-16 h-1 bg-[#FFCC00] rounded-full mb-6"></div>
         </div>
         <p className="text-gray-700 text-base md:text-lg mb-10 text-center max-w-3xl mx-auto">
-          Socio was born from a simple idea pitched by Meeth during a college
-          competition—and it resonated. Joined by Surya and Sachin, the team
+          Socio was born from a simple idea pitched by Meeth Shah during a college
+          competition—and it resonated. Joined by Surya Vamshi and Sachin Yadav, the team
           turned it into a reality. Today, Socio aims to help students across
           campuses stay informed, engaged, and connected with their college
           communities like never before.

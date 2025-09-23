@@ -70,13 +70,13 @@ export default function TeamPage() {
       image: "/founder-surya-vamshi.jpg"
     },
     {
-      name: "Meeth Kumar",
+      name: "Meeth Shah",
       role: "Co-Founder & Design Lead",
       bio: "The visionary who brought the initial idea to life. Met Sachin and Surya during Python training sessions and together they incubated SOCIO through Christ Incubation Foundation.",
       skills: ["UI/UX Design", "Brand Identity", "Innovation", "Strategic Planning"],
       email: "thesocio.blr@gmail.com",
       linkedin: "https://www.linkedin.com/in/meeth-shah-75b182214/",
-      dribbble: "https://dribbble.com/meethkumar",
+      dribbble: "https://dribbble.com/meethshah",
       quote: "Sometimes the best ideas come from connecting with the right people at the right time.",
       funFact: "Met the co-founders during a Python training session and turned a casual conversation into a startup.",
       image: "/founder-meeth-shah.jpg"

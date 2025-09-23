@@ -11,7 +11,7 @@ const StoryPage = () => {
       year: "2024",
       quarter: "Early",
       title: "The Meeting",
-      description: "Sachin Yadav and Surya Vamshi, working as Digital Mission trainers for Python in BBA classes, met Meeth. During their training sessions, the idea for SOCIO sparked.",
+      description: "Sachin Yadav and Surya Vamshi, working as Digital Mission trainers for Python in BBA classes, met Meeth Shah. During their training sessions, the idea for SOCIO sparked.",
       icon: "meeting"
     },
     {
@@ -151,7 +151,7 @@ const StoryPage = () => {
             </h2>
             <p className="text-lg sm:text-xl text-blue-100 mb-4">
               SOCIO's story began in a BBA classroom where two Digital Mission trainers, Sachin Yadav and Surya Vamshi, 
-              were teaching Python programming. It was there they met Meeth, and together, an idea was born.
+              were teaching Python programming. It was there they met Meeth Shah, and together, an idea was born.
             </p>
             <p className="text-base sm:text-lg text-blue-200">
               What started as casual conversations between trainers and a student has grown into a platform 
@@ -207,12 +207,12 @@ const StoryPage = () => {
               <div className="relative w-full max-w-lg mx-auto overflow-hidden rounded-lg shadow-lg">
                 <img
                   src="/sachinsuryameeth.jpg"
-                  alt="SOCIO Founders - Sachin, Surya, and Meeth"
+                  alt="SOCIO Founders - Sachin Yadav, Surya Vamshi, and Meeth Shah"
                   className="w-full h-auto object-cover"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                   <p className="text-white text-center font-medium">
-                    The founding team: Sachin, Surya, and Meeth
+                    The founding team: Sachin Yadav, Surya Vamshi, and Meeth Shah
                   </p>
                 </div>
               </div>
@@ -225,7 +225,7 @@ const StoryPage = () => {
                   </h3>
                   <p className="text-gray-700 text-sm">
                     "We were Digital Mission trainers teaching Python to BBA students. During our sessions, 
-                    we noticed students struggling to find and connect with campus events. That's when we met Meeth, 
+                    we noticed students struggling to find and connect with campus events. That's when we met Meeth Shah, 
                     and the conversations began."
                   </p>
                   <p className="text-[#154CB3] font-medium text-sm mt-2">

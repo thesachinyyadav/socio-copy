@@ -1,199 +1,238 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
-// Create database connection
-const dbPath = path.join(__dirname, '..', 'data', 'socio-copy.db');
-const db = new Database(dbPath);
-
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
+// Create connection pool for better performance
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'socio_db',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
 // Initialize database with schema
-export function initializeDatabase() {
-  // Users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      auth_uuid TEXT UNIQUE,
-      email TEXT UNIQUE NOT NULL,
-      name TEXT,
-      avatar_url TEXT,
-      is_organiser BOOLEAN DEFAULT 0,
-      course TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Events table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS events (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      event_id TEXT UNIQUE NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT,
-      event_date DATE,
-      event_time TIME,
-      end_date DATE,
-      venue TEXT,
-      category TEXT,
-      department_access TEXT, -- JSON string for array
-      claims_applicable BOOLEAN DEFAULT 0,
-      registration_fee REAL,
-      participants_per_team INTEGER,
-      max_participants INTEGER,
-      event_image_url TEXT,
-      banner_url TEXT,
-      pdf_url TEXT,
-      rules TEXT, -- JSON string
-      schedule TEXT, -- JSON string
-      prizes TEXT, -- JSON string for array
-      organizer_email TEXT,
-      organizer_phone TEXT,
-      whatsapp_invite_link TEXT,
-      organizing_dept TEXT,
-      fest TEXT,
-      created_by TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      registration_deadline DATETIME,
-      total_participants INTEGER DEFAULT 0
-    )
-  `);
-
-  // Fests table (fixing table name from 'fest' to 'fests')
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS fests (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      fest_id TEXT UNIQUE NOT NULL,
-      fest_title TEXT NOT NULL,
-      description TEXT,
-      opening_date DATE,
-      closing_date DATE,
-      fest_image_url TEXT,
-      organizing_dept TEXT,
-      department_access TEXT, -- JSON string for array
-      category TEXT,
-      contact_email TEXT,
-      contact_phone TEXT,
-      event_heads TEXT, -- JSON string for array
-      created_by TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Registrations table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS registrations (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      registration_id TEXT UNIQUE NOT NULL,
-      event_id TEXT,
-      user_email TEXT,
-      registration_type TEXT CHECK (registration_type IN ('individual', 'team')),
-      individual_name TEXT,
-      individual_email TEXT,
-      individual_register_number TEXT,
-      team_name TEXT,
-      team_leader_name TEXT,
-      team_leader_email TEXT,
-      team_leader_register_number TEXT,
-      teammates TEXT, -- JSON string
-      qr_code_data TEXT, -- QR code payload for attendance scanning
-      qr_code_generated_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (event_id) REFERENCES events(event_id)
-    )
-  `);
-
-  // Attendance status table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS attendance_status (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      registration_id TEXT,
-      event_id TEXT,
-      status TEXT CHECK (status IN ('attended', 'absent')),
-      marked_at DATETIME,
-      marked_by TEXT,
-      UNIQUE(registration_id),
-      FOREIGN KEY (registration_id) REFERENCES registrations(id),
-      FOREIGN KEY (event_id) REFERENCES events(event_id)
-    )
-  `);
-
-  // Notifications table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS notifications (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      title TEXT NOT NULL,
-      message TEXT NOT NULL,
-      type TEXT CHECK (type IN ('info', 'success', 'warning', 'error')),
-      event_id TEXT,
-      event_title TEXT,
-      action_url TEXT,
-      recipient_email TEXT NOT NULL,
-      is_read BOOLEAN DEFAULT 0,
-      read_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // QR scan logs table for audit trail
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS qr_scan_logs (
-      id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
-      registration_id TEXT,
-      event_id TEXT,
-      scanned_by TEXT,
-      scan_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      scan_result TEXT CHECK (scan_result IN ('success', 'invalid', 'duplicate', 'expired')),
-      scanner_info TEXT, -- JSON string with device/browser info
-      FOREIGN KEY (registration_id) REFERENCES registrations(id),
-      FOREIGN KEY (event_id) REFERENCES events(event_id)
-    )
-  `);
-
-  console.log('Database initialized successfully');
-
-  // Run migrations
-  runMigrations();
-}
-
-// Migration function to handle schema updates
-function runMigrations() {
-  // Check if auth_uuid column exists, if not add it
+export async function initializeDatabase() {
   try {
-    const columns = db.pragma("table_info(users)");
-    const hasAuthUuid = columns.some(col => col.name === 'auth_uuid');
+    console.log('🔍 Checking MySQL connection...');
     
-    if (!hasAuthUuid) {
-      console.log('Adding auth_uuid column to users table...');
-      // Add column without UNIQUE constraint first
-      db.exec('ALTER TABLE users ADD COLUMN auth_uuid TEXT');
-      console.log('auth_uuid column added successfully');
-      
-      // Note: We'll handle uniqueness at the application level since SQLite
-      // doesn't allow adding UNIQUE constraint to existing table with data
-    }
-  } catch (error) {
-    console.error('Migration error for users table:', error);
-  }
+    // Test connection first
+    const connection = await pool.getConnection();
+    await connection.ping();
+    connection.release();
+    console.log('✅ MySQL connection successful');
 
-  // Check if max_participants column exists in events table, if not add it
-  try {
-    const eventColumns = db.pragma("table_info(events)");
-    const hasMaxParticipants = eventColumns.some(col => col.name === 'max_participants');
-    
-    if (!hasMaxParticipants) {
-      console.log('Adding max_participants column to events table...');
-      db.exec('ALTER TABLE events ADD COLUMN max_participants INTEGER');
-      console.log('max_participants column added successfully');
-    }
+    // Create database if it doesn't exist
+    const setupConnection = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+    });
+
+    await setupConnection.execute(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'socio_db'}\``);
+    await setupConnection.end();
+
+    console.log('✅ Database created/verified successfully');
+
+    // Create tables
+    await createTables();
+    console.log('✅ Database initialized successfully with MySQL');
   } catch (error) {
-    console.error('Migration error for events table:', error);
+    console.error('❌ Database initialization error:', error.message);
+    
+    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error('🔧 Please check your MySQL credentials in .env file');
+      console.error('💡 Or run the setup script: npm run setup-mysql');
+    } else if (error.code === 'ECONNREFUSED') {
+      console.error('🔧 MySQL server is not running. Please start MySQL service.');
+    }
+    
+    throw error;
   }
 }
 
-export default db;
+async function createTables() {
+  try {
+    // Users table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        auth_uuid VARCHAR(255) UNIQUE,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255),
+        avatar_url TEXT,
+        is_organiser BOOLEAN DEFAULT FALSE,
+        course VARCHAR(255),
+        register_number VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_email (email),
+        INDEX idx_auth_uuid (auth_uuid)
+      )
+    `);
+
+    // Events table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS events (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        event_id VARCHAR(255) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        event_date DATE,
+        event_time TIME,
+        end_date DATE,
+        venue VARCHAR(255),
+        category VARCHAR(100),
+        department_access JSON,
+        claims_applicable BOOLEAN DEFAULT FALSE,
+        registration_fee DECIMAL(10,2),
+        participants_per_team INTEGER,
+        max_participants INTEGER,
+        event_image_url TEXT,
+        banner_url TEXT,
+        pdf_url TEXT,
+        contact_email VARCHAR(255),
+        contact_phone VARCHAR(20),
+        event_heads JSON,
+        created_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_event_id (event_id),
+        INDEX idx_category (category),
+        INDEX idx_event_date (event_date)
+      )
+    `);
+
+    // Registrations table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS registrations (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        registration_id VARCHAR(255) UNIQUE NOT NULL,
+        event_id VARCHAR(255),
+        user_email VARCHAR(255),
+        registration_type ENUM('individual', 'team'),
+        individual_name VARCHAR(255),
+        individual_email VARCHAR(255),
+        individual_register_number VARCHAR(100),
+        team_name VARCHAR(255),
+        team_leader_name VARCHAR(255),
+        team_leader_email VARCHAR(255),
+        team_leader_register_number VARCHAR(100),
+        teammates JSON,
+        qr_code_data TEXT,
+        qr_code_generated_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_registration_id (registration_id),
+        INDEX idx_event_id (event_id),
+        FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE
+      )
+    `);
+
+    // Attendance status table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS attendance_status (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        registration_id VARCHAR(255),
+        event_id VARCHAR(255),
+        status ENUM('attended', 'absent') DEFAULT 'absent',
+        marked_at TIMESTAMP,
+        marked_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_attendance (registration_id),
+        INDEX idx_event_id (event_id),
+        FOREIGN KEY (registration_id) REFERENCES registrations(registration_id) ON DELETE CASCADE,
+        FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE
+      )
+    `);
+
+    // Notifications table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type ENUM('info', 'success', 'warning', 'error') DEFAULT 'info',
+        event_id VARCHAR(255),
+        event_title VARCHAR(255),
+        action_url TEXT,
+        recipient_email VARCHAR(255) NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_recipient (recipient_email),
+        INDEX idx_event_id (event_id),
+        INDEX idx_created_at (created_at)
+      )
+    `);
+
+    // QR scan logs table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS qr_scan_logs (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        registration_id VARCHAR(255),
+        event_id VARCHAR(255),
+        scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        scan_result ENUM('success', 'invalid', 'duplicate', 'expired') DEFAULT 'success',
+        scanner_info JSON,
+        INDEX idx_registration_id (registration_id),
+        INDEX idx_event_id (event_id),
+        INDEX idx_scan_timestamp (scan_timestamp),
+        FOREIGN KEY (registration_id) REFERENCES registrations(registration_id) ON DELETE CASCADE,
+        FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log('All tables created successfully');
+  } catch (error) {
+    console.error('Error creating tables:', error);
+    throw error;
+  }
+}
+
+// Helper function to execute queries
+export async function executeQuery(query, params = []) {
+  try {
+    const [results] = await pool.execute(query, params);
+    return results;
+  } catch (error) {
+    console.error('Query execution error:', error);
+    throw error;
+  }
+}
+
+// Helper function to get a single row
+export async function queryOne(query, params = []) {
+  try {
+    const [results] = await pool.execute(query, params);
+    return results[0] || null;
+  } catch (error) {
+    console.error('Query one execution error:', error);
+    throw error;
+  }
+}
+
+// Helper function to get all rows
+export async function queryAll(query, params = []) {
+  try {
+    const [results] = await pool.execute(query, params);
+    return results;
+  } catch (error) {
+    console.error('Query all execution error:', error);
+    throw error;
+  }
+}
+
+// Function to close the connection pool
+export async function closeDatabase() {
+  try {
+    await pool.end();
+    console.log('Database connection pool closed');
+  } catch (error) {
+    console.error('Error closing database:', error);
+  }
+}
+
+export { pool };
+export default pool;

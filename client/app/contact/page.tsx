@@ -82,19 +82,19 @@ const ContactPage = () => {
       name: "Sachin Yadav",
       role: "Co-Founder & Lead Developer",
       email: "thesocio.blr@gmail.com",
-      image: "/team/sachin.jpg"
+      image: "/founder-sachin-yadav.jpg"
     },
     {
-      name: "Surya Meeth",
+      name: "Surya Vamshi",
       role: "Co-Founder & Product Manager",
       email: "thesocio.blr@gmail.com",
-      image: "/team/surya.jpg"
+      image: "/founder-surya-vamshi.jpg"
     },
     {
-      name: "Meeth Kumar",
+      name: "Meeth Shah",
       role: "Co-Founder & Design Lead",
       email: "thesocio.blr@gmail.com",
-      image: "/team/meeth.jpg"
+      image: "/founder-meeth-shah.jpg"
     }
   ];
 

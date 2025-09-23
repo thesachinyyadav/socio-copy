@@ -3,9 +3,9 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from 'url';
-import db, { initializeDatabase } from "./config/database.js";
+import { initializeDatabase } from "./config/database.js";
 
-// Using SQLite-based routes only - no Supabase database access
+// Using MySQL-based routes
 import userRoutes from "./routes/userRoutes.js";
 import eventRoutes from "./routes/eventRoutes_secured.js";  // Using secured routes
 import festRoutes from "./routes/festRoutes.js";
@@ -19,8 +19,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize database
-initializeDatabase();
+// Initialize MySQL database
+await initializeDatabase();
 
 const app = express();
 app.use(express.json());
