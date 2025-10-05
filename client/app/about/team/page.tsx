@@ -14,14 +14,14 @@ export default function TeamPage() {
       case "innovation":
         return (
           <div className={`${iconClass} bg-[#FFCC00]`}>
-            <svg className="w-8 h-8 text-[#1E293B]" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-8 h-8 text-[#063168]" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
         );
       case "collaboration":
         return (
-          <div className={`${iconClass} bg-[#2563EB]`}>
+          <div className={`${iconClass} bg-[#154CB3]`}>
             <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
             </svg>
@@ -154,12 +154,12 @@ export default function TeamPage() {
         {/* Header Section */}
         <div className="mb-12">
           <div className="flex flex-row items-center justify-between">
-            <h1 className="text-3xl font-black text-[#2563EB] mb-2 mt-6">
+            <h1 className="text-3xl font-black text-[#154CB3] mb-2 mt-6">
               Meet Our Team
             </h1>
             <Link
               href="/about"
-              className="flex items-center text-[#1E293B] hover:underline cursor-pointer text-xs sm:text-base"
+              className="flex items-center text-[#063168] hover:underline cursor-pointer text-xs sm:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -202,14 +202,14 @@ export default function TeamPage() {
 
         {/* Founders Section */}
         <div className="mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E293B] mb-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#063168] mb-8 text-center">
             Founding Team
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {founders.map((founder, index) => (
               <div key={index} className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all">
                 {/* Profile Image */}
-                <div className="h-48 bg-gradient-to-br from-[#2563EB] to-[#1E3A8A] flex items-center justify-center">
+                <div className="h-48 bg-gradient-to-br from-[#154CB3] to-[#063168] flex items-center justify-center">
                   {founder.image ? (
                     <Image 
                       src={founder.image} 
@@ -220,7 +220,7 @@ export default function TeamPage() {
                     />
                   ) : (
                     <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-                      <span className="text-[#2563EB] text-3xl font-bold">
+                      <span className="text-[#154CB3] text-3xl font-bold">
                         {founder.name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
@@ -231,7 +231,7 @@ export default function TeamPage() {
                   <h3 className="text-xl font-bold text-gray-800 mb-1">
                     {founder.name}
                   </h3>
-                  <p className="text-[#2563EB] font-medium mb-4">
+                  <p className="text-[#154CB3] font-medium mb-4">
                     {founder.role}
                   </p>
                   <p className="text-gray-600 text-sm mb-4 leading-relaxed">
@@ -239,7 +239,7 @@ export default function TeamPage() {
                   </p>
                   
                   {/* Quote */}
-                  <div className="bg-gray-50 border-l-4 border-[#F59E0B] p-4 rounded mb-4">
+                  <div className="bg-gray-50 border-l-4 border-[#FFCC00] p-4 rounded mb-4">
                     <p className="text-gray-700 italic text-sm">
                       "{founder.quote}"
                     </p>
@@ -250,7 +250,7 @@ export default function TeamPage() {
                     <h4 className="text-sm font-bold text-gray-800 mb-2">Expertise:</h4>
                     <div className="flex flex-wrap gap-2">
                       {founder.skills.map((skill, skillIndex) => (
-                        <span key={skillIndex} className="bg-[#2563EB]/10 text-[#2563EB] px-2 py-1 rounded-full text-xs font-medium">
+                        <span key={skillIndex} className="bg-[#154CB3]/10 text-[#154CB3] px-2 py-1 rounded-full text-xs font-medium">
                           {skill}
                         </span>
                       ))}
@@ -269,7 +269,7 @@ export default function TeamPage() {
                   <div className="flex space-x-4">
                     <a
                       href={`mailto:${founder.email}`}
-                      className="text-[#2563EB] hover:text-[#1E3A8A] transition-colors"
+                      className="text-[#154CB3] hover:text-[#063168] transition-colors"
                       title="Email"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -281,7 +281,7 @@ export default function TeamPage() {
                       href={founder.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#2563EB] hover:text-[#1E3A8A] transition-colors"
+                      className="text-[#154CB3] hover:text-[#063168] transition-colors"
                       title="LinkedIn"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -293,7 +293,7 @@ export default function TeamPage() {
                         href={founder.github}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#2563EB] hover:text-[#1E3A8A] transition-colors"
+                        className="text-[#154CB3] hover:text-[#063168] transition-colors"
                         title="GitHub"
                       >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -306,7 +306,7 @@ export default function TeamPage() {
                         href={founder.dribbble}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#2563EB] hover:text-[#1E3A8A] transition-colors"
+                        className="text-[#154CB3] hover:text-[#063168] transition-colors"
                         title="Dribbble"
                       >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -323,14 +323,14 @@ export default function TeamPage() {
 
         {/* Advisors Section */}
         <div className="mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E293B] mb-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#063168] mb-8 text-center">
             Our Growing Team
           </h2>
           
           {/* Team Expansion Story */}
           <div className="mb-12 bg-blue-50 border-l-4 border-[#154CB3] p-6 rounded-lg">
-            <h3 className="text-lg font-bold text-[#2563EB] mb-3">
-              <span className="inline-block w-5 h-5 bg-[#2563EB] rounded-full mr-2"></span>
+            <h3 className="text-lg font-bold text-[#154CB3] mb-3">
+              <span className="inline-block w-5 h-5 bg-[#154CB3] rounded-full mr-2"></span>
               Team Expansion (March 2025)
             </h3>
             <p className="text-gray-700 mb-4">
@@ -364,7 +364,7 @@ export default function TeamPage() {
             </div>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#1E293B] mb-8 text-center">
+          <h3 className="text-2xl sm:text-3xl font-bold text-[#063168] mb-8 text-center">
             Faculty Advisors
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -380,7 +380,7 @@ export default function TeamPage() {
                       className="rounded-full object-cover mr-6 border-3 border-[#154CB3] shadow-md"
                     />
                   ) : (
-                    <div className="w-20 h-20 bg-[#2563EB] rounded-full flex items-center justify-center mr-6 shadow-md">
+                    <div className="w-20 h-20 bg-[#154CB3] rounded-full flex items-center justify-center mr-6 shadow-md">
                       <span className="text-white text-2xl font-bold">
                         {advisor.name.split(' ').map(n => n[0]).join('')}
                       </span>
@@ -390,7 +390,7 @@ export default function TeamPage() {
                     <h3 className="text-xl font-bold text-gray-800 mb-1">
                       {advisor.name}
                     </h3>
-                    <p className="text-[#2563EB] font-bold text-base mb-1">
+                    <p className="text-[#154CB3] font-bold text-base mb-1">
                       {advisor.role}
                     </p>
                     <p className="text-gray-600 text-sm font-medium">
@@ -418,7 +418,7 @@ export default function TeamPage() {
 
         {/* Values Section */}
         <div className="mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E293B] mb-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#063168] mb-8 text-center">
             Our Values
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -460,7 +460,7 @@ export default function TeamPage() {
 
         {/* Join Us Section */}
         <div className="text-center mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E293B] mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#063168] mb-6">
             Want to Join Our Mission?
           </h2>
           <p className="text-gray-600 mb-8 max-w-3xl mx-auto">
@@ -470,13 +470,13 @@ export default function TeamPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/contact"
-              className="bg-[#2563EB] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#063168] transition-all"
+              className="bg-[#154CB3] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#063168] transition-all"
             >
               Get In Touch
             </Link>
             <a
               href="mailto:thesocio.blr@gmail.com"
-              className="border border-[#154CB3] text-[#2563EB] px-6 py-3 rounded-lg font-medium hover:bg-[#2563EB]/10 transition-all"
+              className="border border-[#154CB3] text-[#154CB3] px-6 py-3 rounded-lg font-medium hover:bg-[#154CB3]/10 transition-all"
             >
               Email Our Team
             </a>
