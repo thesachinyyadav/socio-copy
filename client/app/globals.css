@@ -2,13 +2,8 @@
 
 :root {
   --font-dm-sans: "DM Sans", system-ui, sans-serif;
-  --primary-color: #2563EB;
-  --primary-dark: #1E293B;
-  --accent-color: #F59E0B;
-  --secondary-color: #F59E0B;
-  --success-color: #059669;
-  --error-color: #DC2626;
-  --info-color: #0EA5E9;
+  --primary-color: #154CB3;
+  --secondary-color: #FFCC00;
 }
 
 html, body {
@@ -60,7 +55,7 @@ html, body {
 
 /* Gradient text utility */
 .gradient-text {
-  background-image: linear-gradient(45deg, var(--primary-color), var(--info-color), var(--accent-color));
+  background-image: linear-gradient(45deg, var(--primary-color), #30A4EF, var(--secondary-color));
   background-size: 200% 200%;
   animation: gradient-shift 5s ease infinite;
   -webkit-background-clip: text;

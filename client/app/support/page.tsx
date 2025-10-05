@@ -111,8 +111,8 @@ const SupportPage = () => {
         </svg>
       ),
       bgColor: "bg-red-50",
-      textColor: "text-[#DC2626]",
-      buttonColor: "bg-[#DC2626] hover:bg-[#B91C1C]"
+      textColor: "text-red-600",
+      buttonColor: "bg-red-600 hover:bg-red-700"
     },
     {
       title: "Request a Feature",
@@ -123,9 +123,9 @@ const SupportPage = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
       ),
-      bgColor: "bg-emerald-50",
-      textColor: "text-[#059669]",
-      buttonColor: "bg-[#059669] hover:bg-[#047857]"
+      bgColor: "bg-green-50",
+      textColor: "text-green-600",
+      buttonColor: "bg-green-600 hover:bg-green-700"
     },
     {
       title: "Contact Support",
@@ -137,8 +137,8 @@ const SupportPage = () => {
         </svg>
       ),
       bgColor: "bg-blue-50",
-      textColor: "text-[#2563EB]",
-      buttonColor: "bg-[#2563EB] hover:bg-[#1D4ED8]"
+      textColor: "text-[#154CB3]",
+      buttonColor: "bg-[#154CB3] hover:bg-[#063168]"
     }
   ];
 
@@ -148,12 +148,12 @@ const SupportPage = () => {
         {/* Header Section */}
         <div className="mb-12">
           <div className="flex flex-row items-center justify-between">
-            <h1 className="text-3xl font-black text-[#2563EB] mb-2 mt-6">
+            <h1 className="text-3xl font-black text-[#154CB3] mb-2 mt-6">
               Help & Support
             </h1>
             <Link
               href="/contact"
-              className="flex items-center text-[#1E293B] hover:underline cursor-pointer text-xs sm:text-base"
+              className="flex items-center text-[#063168] hover:underline cursor-pointer text-xs sm:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -183,7 +183,7 @@ const SupportPage = () => {
               placeholder="Search for help articles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-sm sm:text-base"
+              className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#154CB3] focus:border-transparent text-sm sm:text-base"
             />
             <svg
               className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -198,7 +198,7 @@ const SupportPage = () => {
 
         {/* Quick Actions */}
         <div className="mb-16">
-          <h2 className="text-xl sm:text-2xl font-bold text-[#1E293B] mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#063168] mb-6">
             Quick Actions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -225,7 +225,7 @@ const SupportPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Categories Sidebar */}
           <div className="lg:col-span-1">
-            <h3 className="text-lg font-bold text-[#1E293B] mb-4">
+            <h3 className="text-lg font-bold text-[#063168] mb-4">
               Browse by Category
             </h3>
             <div className="space-y-2">
@@ -235,7 +235,7 @@ const SupportPage = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-all text-sm ${
                     selectedCategory === category.id
-                      ? "bg-[#2563EB] text-white"
+                      ? "bg-[#154CB3] text-white"
                       : "bg-gray-50 hover:bg-gray-100 text-gray-700"
                   }`}
                 >
@@ -253,7 +253,7 @@ const SupportPage = () => {
           {/* Articles */}
           <div className="lg:col-span-3">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-[#1E293B]">
+              <h3 className="text-lg font-bold text-[#063168]">
                 Help Articles
               </h3>
               <span className="text-sm text-gray-500">
@@ -265,7 +265,7 @@ const SupportPage = () => {
               {filteredArticles.map((article) => (
                 <div key={article.id} className="bg-gray-50 border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all">
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-lg font-bold text-gray-800 hover:text-[#2563EB] cursor-pointer">
+                    <h4 className="text-lg font-bold text-gray-800 hover:text-[#154CB3] cursor-pointer">
                       {article.title}
                     </h4>
                     <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
@@ -276,7 +276,7 @@ const SupportPage = () => {
                     {article.description}
                   </p>
                   <div className="flex justify-between items-center">
-                    <button className="text-[#2563EB] hover:underline font-medium text-sm">
+                    <button className="text-[#154CB3] hover:underline font-medium text-sm">
                       Read Article →
                     </button>
                     <div className="flex items-center text-xs text-gray-500">
@@ -306,7 +306,7 @@ const SupportPage = () => {
                     setSearchQuery("");
                     setSelectedCategory("all");
                   }}
-                  className="text-[#2563EB] hover:underline font-medium"
+                  className="text-[#154CB3] hover:underline font-medium"
                 >
                   Clear filters
                 </button>
@@ -316,7 +316,7 @@ const SupportPage = () => {
         </div>
 
         {/* Still Need Help Section */}
-        <div className="mt-16 bg-gradient-to-r from-[#2563EB] to-[#1E3A8A] text-white p-6 sm:p-8 rounded-lg">
+        <div className="mt-16 bg-[#154CB3] text-white p-6 sm:p-8 rounded-lg">
           <div className="text-center">
             <h2 className="text-xl sm:text-2xl font-bold mb-4">
               Still Need Help?
@@ -327,7 +327,7 @@ const SupportPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/contact"
-                className="bg-white text-[#2563EB] px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-all"
+                className="bg-white text-[#154CB3] px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-all"
               >
                 Contact Support
               </Link>
